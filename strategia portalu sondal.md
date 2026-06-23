@@ -4,7 +4,7 @@
 ### 1. Pozycjonowanie Marki (Brand Positioning)
 sondal.top to hybrydowa platforma nowej generacji, łącząca rzetelność portalu analiz danych (w stylu Visual Capitalist) z dynamiką sieci społecznościowej opartej na opinii publicznej (tryb NOW!). 
 *   **Misja:** Demokratyzacja danych i konfrontacja oficjalnych statystyk z rzeczywistym głosem społeczności.
-*   **Slogan:** "sondal.top – Fakty spotykają opinie."
+*   **Slogan:** "sondal.top – FAT DATA"
 *   **Domena (.top):** Sygnalizuje nowoczesność, dążenie do bycia na szczycie trendów informacyjnych (Trending Topics) oraz globalny charakter narzędzia.
 
 ### 2. Identyfikacja Wizualna (Design Tokens)
