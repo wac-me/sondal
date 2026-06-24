@@ -595,3 +595,7 @@ export default function SondalApp() {
     </>
   );
 }
+
+export default sondal;
+
+
