@@ -380,16 +380,43 @@ function PollCard({ poll }) {
 }
 
 // ─── Floating Create Button ───────────────────────────────
-function FloatingCreateBtn({ onClick, visible }) {
-  const [hovered, setHovered] = useState(false);
+function FloatingCreateBtn({ onClick }) {
+  const [expanded, setExpanded] = useState(false);
+  const [mounted, setMounted]   = useState(false);
+
+  useEffect(() => { setTimeout(() => setMounted(true), 600); }, []);
+
   return (
-    <div style={{ position:"fixed", left:12, bottom:80, zIndex:300, display:"flex", alignItems:"center", gap:0, transition:"all 0.3s cubic-bezier(.22,.68,0,1.2)", transform: visible ? "translateX(0)" : "translateX(-120px)" }}>
-      <button onClick={onClick}
-        onMouseEnter={()=>setHovered(true)}
-        onMouseLeave={()=>setHovered(false)}
-        style={{ background: hovered ? theme.red : theme.accent, color:"#fff", border:"none", borderRadius:hovered?"14px 14px 14px 14px":"50%", width: hovered?140:46, height:46, display:"flex", alignItems:"center", justifyContent:"center", gap:8, cursor:"pointer", boxShadow:`0 4px 20px ${theme.accent}55`, transition:"all 0.3s cubic-bezier(.22,.68,0,1.2)", overflow:"hidden", whiteSpace:"nowrap" }}>
-        <span style={{ fontSize:22, lineHeight:1, flexShrink:0 }}>+</span>
-        <span style={{ fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:13, fontWeight:700, opacity: hovered?1:0, maxWidth: hovered?100:0, transition:"all 0.25s", overflow:"hidden" }}>Stwórz sondę</span>
+    <div style={{
+      position: "fixed", left: 12, bottom: 82, zIndex: 300,
+      transform: mounted ? "translateX(0)" : "translateX(-80px)",
+      opacity: mounted ? 1 : 0,
+      transition: "transform 0.4s cubic-bezier(.22,.68,0,1.2), opacity 0.35s ease",
+    }}>
+      <button
+        onClick={() => { setExpanded(e => !e); onClick(); }}
+        onMouseEnter={() => setExpanded(true)}
+        onMouseLeave={() => setExpanded(false)}
+        style={{
+          background: expanded ? theme.red : theme.accent,
+          color: "#fff", border: "none",
+          borderRadius: 23,
+          width: expanded ? 148 : 46,
+          height: 46,
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+          cursor: "pointer",
+          boxShadow: `0 4px 24px ${expanded ? theme.red : theme.accent}66`,
+          transition: "all 0.3s cubic-bezier(.22,.68,0,1.2)",
+          overflow: "hidden", whiteSpace: "nowrap", paddingLeft: expanded ? 14 : 0,
+        }}>
+        <span style={{ fontSize: 22, lineHeight: 1, flexShrink: 0, fontWeight: 300 }}>+</span>
+        <span style={{
+          fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 13, fontWeight: 700,
+          opacity: expanded ? 1 : 0,
+          maxWidth: expanded ? 100 : 0,
+          transition: "opacity 0.2s ease, max-width 0.3s ease",
+          overflow: "hidden",
+        }}>Stwórz sondę</span>
       </button>
     </div>
   );
@@ -398,15 +425,10 @@ function FloatingCreateBtn({ onClick, visible }) {
 // ─── Discover ─────────────────────────────────────────────
 function DiscoverScreen({ onGoToCreate }) {
   const [activeCat, setActiveCat] = useState("#Wszystkie");
-  const [scrollY, setScrollY] = useState(0);
-  const feedRef = useRef(null);
-
-  const handleScroll = () => { if (feedRef.current) setScrollY(feedRef.current.scrollTop); };
-
   return (
     <>
       <StickyHeader nowActive={true} onCreateClick={onGoToCreate}/>
-      <div ref={feedRef} onScroll={handleScroll} style={{ flex:1, overflowY:"auto" }}>
+      <div style={{ flex:1, overflowY:"auto" }}>
         <HeroSlider onCreateClick={onGoToCreate}/>
         <StatsBar/>
         <TrendingSection/>
@@ -420,7 +442,7 @@ function DiscoverScreen({ onGoToCreate }) {
           <div style={{ height:20 }}/>
         </div>
       </div>
-      <FloatingCreateBtn onClick={onGoToCreate} visible={scrollY > 80}/>
+      <FloatingCreateBtn onClick={onGoToCreate}/>
     </>
   );
 }
