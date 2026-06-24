@@ -650,13 +650,14 @@ export default function SondalApp() {
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=Inter:wght@400;500;600&display=swap');
         @keyframes pulsered { 0%{box-shadow:0 0 0 0 rgba(232,55,61,0.7)} 70%{box-shadow:0 0 0 6px rgba(232,55,61,0)} 100%{box-shadow:0 0 0 0 rgba(232,55,61,0)} }
         * { box-sizing:border-box; margin:0; padding:0; }
+        html, body, #root { height:100%; }
         textarea:focus, input:focus { border-color:#3B7DD8 !important; }
         ::-webkit-scrollbar { width:3px; height:3px; }
         ::-webkit-scrollbar-thumb { background:#2A2D3A; border-radius:2px; }
       `}</style>
 
-      <div style={{ background:theme.bg, minHeight:"100vh", maxWidth:430, margin:"0 auto", display:"flex", flexDirection:"column", fontFamily:"Inter, sans-serif", overflow:"hidden" }}>
-        <div style={screenStyle}>
+      <div style={{ background:theme.bg, height:"100dvh", maxWidth:430, margin:"0 auto", display:"flex", flexDirection:"column", fontFamily:"Inter, sans-serif", overflow:"hidden" }}>
+        <div style={{ ...screenStyle, flex:1, minHeight:0 }}>
           {activeNav==="discover" && <DiscoverScreen onGoToCreate={()=>switchTo("create")}/>}
           {activeNav==="create"   && creatorStep==="form"    && <CreatorScreen onSuccess={handleSuccess}/>}
           {activeNav==="create"   && creatorStep==="success" && <SuccessScreen pollData={pollData} onReset={handleReset} onGoToDiscover={handleGoToDiscover}/>}
@@ -678,6 +679,8 @@ export default function SondalApp() {
             </div></>
           )}
         </div>
+
+        {/* Navbar always pinned outside transform context */}
         <BottomNav active={activeNav} setActive={handleNavChange}/>
       </div>
     </>
