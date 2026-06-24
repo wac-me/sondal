@@ -554,7 +554,7 @@ function BottomNav({ active, setActive }) {
 
 // ─── Root ─────────────────────────────────────────────────
 
-export default function SondalApp() {
+function SondalApp() {
   const [activeNav, setActiveNav] = useState("discover");
   const [creatorStep, setCreatorStep] = useState("form");
   const [pollData, setPollData] = useState(null);
@@ -596,6 +596,6 @@ export default function SondalApp() {
   );
 }
 
-export default sondal;
+export default SondalApp;
 
 
