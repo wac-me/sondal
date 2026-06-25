@@ -149,19 +149,49 @@ function VoteButtons({ options, split, voted, onVote, hot }) {
 }
 
 // ─── Header ───────────────────────────────────────────────
-function StickyHeader({ nowActive, onCreateClick }) {
+function StickyHeader({ nowActive }) {
   const [nowVisible, setNowVisible] = useState(true);
+  const [hidden, setHidden]         = useState(false);
+  const lastScrollY = useRef(0);
+  const scrollEl    = useRef(null);
+
+  // Blink NOW! every 4s
   useEffect(() => {
     if (!nowActive) return;
-    const interval = setInterval(() => {
-      setNowVisible(v => !v);
-      setTimeout(() => setNowVisible(true), 400);
+    const id = setInterval(() => {
+      setNowVisible(false);
+      setTimeout(() => setNowVisible(true), 350);
     }, 4000);
-    return () => clearInterval(interval);
+    return () => clearInterval(id);
   }, [nowActive]);
 
+  // Hide on scroll down, reveal on scroll up
+  // We attach to the nearest scrollable parent after mount
+  useEffect(() => {
+    const el = document.querySelector('[data-scroll-feed]');
+    if (!el) return;
+    scrollEl.current = el;
+    const onScroll = () => {
+      const y = el.scrollTop;
+      if (y > lastScrollY.current + 6 && y > 50) setHidden(true);
+      else if (y < lastScrollY.current - 4)       setHidden(false);
+      lastScrollY.current = y;
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, []);
+
   return (
-    <div style={{ position:"sticky", top:0, zIndex:200, background:`${theme.bg}F2`, backdropFilter:"blur(12px)", borderBottom:`1px solid ${theme.border}`, padding:"10px 16px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+    <div style={{
+      position:"sticky", top:0, zIndex:200,
+      background:`${theme.bg}F2`, backdropFilter:"blur(12px)",
+      borderBottom:`1px solid ${theme.border}`,
+      padding:"10px 16px",
+      display:"flex", alignItems:"center", justifyContent:"space-between",
+      transform: hidden ? "translateY(-100%)" : "translateY(0)",
+      transition: "transform 0.3s cubic-bezier(.4,0,.2,1)",
+    }}>
+      {/* Left — Logo */}
       <div style={{ display:"flex", alignItems:"center", gap:8 }}>
         <LogoMark size={28}/>
         <div>
@@ -173,28 +203,28 @@ function StickyHeader({ nowActive, onCreateClick }) {
         </div>
       </div>
 
-      {nowActive && (
-        <div style={{ display:"flex", alignItems:"center", gap:5, background:theme.redDim, border:`1px solid ${theme.redBorder}`, borderRadius:20, padding:"4px 10px", opacity: nowVisible ? 1 : 0, transition:"opacity 0.3s ease" }}>
+      {/* Center — Search */}
+      <button style={{ background:"none", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", padding:"6px 10px" }}>
+        <span style={{ fontSize:18, color:theme.textMuted }}>🔍</span>
+      </button>
+
+      {/* Right — NOW! badge */}
+      {nowActive ? (
+        <div style={{ display:"flex", alignItems:"center", gap:5, background:theme.redDim, border:`1px solid ${theme.redBorder}`, borderRadius:20, padding:"4px 10px", opacity: nowVisible ? 1 : 0.15, transition:"opacity 0.35s ease" }}>
           <span style={{ width:6, height:6, borderRadius:"50%", background:theme.red, display:"inline-block", animation:"pulsered 1.8s infinite" }}/>
           <span style={{ fontFamily:"'Plus Jakarta Sans', sans-serif", fontWeight:700, fontSize:11, color:theme.red, letterSpacing:"0.08em" }}>NOW!</span>
         </div>
+      ) : (
+        <div style={{ width:72 }}/>
       )}
-
-      <div style={{ display:"flex", gap:12, alignItems:"center" }}>
-        <span style={{ fontSize:17, cursor:"pointer", color:theme.textMuted }}>🔍</span>
-        <div style={{ width:30, height:30, borderRadius:"50%", background:theme.indigo, border:`1px solid ${theme.borderAccent}`, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
-          <span style={{ fontSize:13, color:theme.accent }}>◉</span>
-        </div>
-      </div>
     </div>
   );
 }
 
 // ─── Hero Slider ──────────────────────────────────────────
-const SLIDE_DURATION = 5500;
-const SLIDE_IN  = 320;
-const SLIDE_HOLD = 4600;
-const SLIDE_OUT = 280;
+const SLIDE_IN  = 350;
+const SLIDE_HOLD = 9500;
+const SLIDE_OUT = 300;
 
 function HeroSlider({ onCreateClick }) {
   const [current, setCurrent]   = useState(0);
@@ -303,23 +333,58 @@ function HeroSlider({ onCreateClick }) {
 
 // ─── Stats Bar ────────────────────────────────────────────
 function StatsBar() {
+  const trackRef = useRef(null);
+
+  // Slow infinite scroll loop
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    let frame;
+    let pos = 0;
+    const speed = 0.4; // px per frame
+    const step = () => {
+      pos += speed;
+      if (pos >= el.scrollWidth / 2) pos = 0;
+      el.scrollLeft = pos;
+      frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+    const pause  = () => cancelAnimationFrame(frame);
+    const resume = () => { frame = requestAnimationFrame(step); };
+    el.addEventListener('mouseenter', pause);
+    el.addEventListener('mouseleave', resume);
+    el.addEventListener('touchstart', pause, { passive:true });
+    el.addEventListener('touchend',   resume);
+    return () => {
+      cancelAnimationFrame(frame);
+      el.removeEventListener('mouseenter', pause);
+      el.removeEventListener('mouseleave', resume);
+      el.removeEventListener('touchstart', pause);
+      el.removeEventListener('touchend',   resume);
+    };
+  }, []);
+
+  const StatCard = ({ s }) => (
+    <div style={{ background:theme.surface, border:`1px solid ${theme.border}`, borderRadius:10, padding:"10px 12px", flexShrink:0, minWidth:108 }}>
+      <p style={{ color:theme.textDim, fontFamily:"Inter, sans-serif", fontSize:9, margin:"0 0 4px", textTransform:"uppercase", letterSpacing:"0.06em" }}>{s.label}</p>
+      <div style={{ display:"flex", alignItems:"baseline", gap:5 }}>
+        <span style={{ color:theme.text, fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:18, fontWeight:800 }}>{s.value}</span>
+        <span style={{ color: s.pos===true?theme.green:s.pos===false?theme.red:theme.textDim, fontSize:10, fontFamily:"Inter, sans-serif", fontWeight:600 }}>{s.delta}</span>
+      </div>
+      <p style={{ color:theme.textDim, fontFamily:"Inter, sans-serif", fontSize:9, margin:"3px 0 0" }}>{s.src}</p>
+    </div>
+  );
+
   return (
-    <div style={{ padding:"12px 16px", borderBottom:`1px solid ${theme.border}` }}>
-      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
+    <div style={{ padding:"12px 0 12px 16px", borderBottom:`1px solid ${theme.border}` }}>
+      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8, paddingRight:16 }}>
         <div style={{ width:3, height:12, background:theme.accent, borderRadius:2 }}/>
         <span style={{ color:theme.textMuted, fontFamily:"Inter, sans-serif", fontSize:10, fontWeight:600, letterSpacing:"0.08em", textTransform:"uppercase" }}>Dane oficjalne</span>
       </div>
-      <div style={{ display:"flex", gap:8, overflowX:"auto", scrollbarWidth:"none" }}>
-        {officialStats.map((s,i) => (
-          <div key={i} style={{ background:theme.surface, border:`1px solid ${theme.border}`, borderRadius:10, padding:"10px 12px", flexShrink:0, minWidth:108 }}>
-            <p style={{ color:theme.textDim, fontFamily:"Inter, sans-serif", fontSize:9, margin:"0 0 4px", textTransform:"uppercase", letterSpacing:"0.06em" }}>{s.label}</p>
-            <div style={{ display:"flex", alignItems:"baseline", gap:5 }}>
-              <span style={{ color:theme.text, fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:18, fontWeight:800 }}>{s.value}</span>
-              <span style={{ color: s.pos===true?theme.green:s.pos===false?theme.red:theme.textDim, fontSize:10, fontFamily:"Inter, sans-serif", fontWeight:600 }}>{s.delta}</span>
-            </div>
-            <p style={{ color:theme.textDim, fontFamily:"Inter, sans-serif", fontSize:9, margin:"3px 0 0" }}>{s.src}</p>
-          </div>
-        ))}
+      {/* Doubled items for seamless loop */}
+      <div ref={trackRef} style={{ display:"flex", gap:8, overflowX:"auto", scrollbarWidth:"none", WebkitOverflowScrolling:"touch" }}>
+        {[...officialStats, ...officialStats].map((s,i) => <StatCard key={i} s={s}/>)}
+        <div style={{ flexShrink:0, width:16 }}/>
       </div>
     </div>
   );
@@ -379,48 +444,6 @@ function PollCard({ poll }) {
   );
 }
 
-// ─── Floating Create Button ───────────────────────────────
-function FloatingCreateBtn({ onClick }) {
-  const [expanded, setExpanded] = useState(false);
-  const [mounted, setMounted]   = useState(false);
-
-  useEffect(() => { setTimeout(() => setMounted(true), 600); }, []);
-
-  return (
-    <div style={{
-      position: "fixed", left: 12, bottom: 82, zIndex: 300,
-      transform: mounted ? "translateX(0)" : "translateX(-80px)",
-      opacity: mounted ? 1 : 0,
-      transition: "transform 0.4s cubic-bezier(.22,.68,0,1.2), opacity 0.35s ease",
-    }}>
-      <button
-        onClick={() => { setExpanded(e => !e); onClick(); }}
-        onMouseEnter={() => setExpanded(true)}
-        onMouseLeave={() => setExpanded(false)}
-        style={{
-          background: expanded ? theme.red : theme.accent,
-          color: "#fff", border: "none",
-          borderRadius: 23,
-          width: expanded ? 148 : 46,
-          height: 46,
-          display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-          cursor: "pointer",
-          boxShadow: `0 4px 24px ${expanded ? theme.red : theme.accent}66`,
-          transition: "all 0.3s cubic-bezier(.22,.68,0,1.2)",
-          overflow: "hidden", whiteSpace: "nowrap", paddingLeft: expanded ? 14 : 0,
-        }}>
-        <span style={{ fontSize: 22, lineHeight: 1, flexShrink: 0, fontWeight: 300 }}>+</span>
-        <span style={{
-          fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 13, fontWeight: 700,
-          opacity: expanded ? 1 : 0,
-          maxWidth: expanded ? 100 : 0,
-          transition: "opacity 0.2s ease, max-width 0.3s ease",
-          overflow: "hidden",
-        }}>Stwórz sondę</span>
-      </button>
-    </div>
-  );
-}
 
 // ─── Discover ─────────────────────────────────────────────
 function DiscoverScreen({ onGoToCreate }) {
@@ -428,7 +451,7 @@ function DiscoverScreen({ onGoToCreate }) {
   return (
     <>
       <StickyHeader nowActive={true} onCreateClick={onGoToCreate}/>
-      <div style={{ flex:1, overflowY:"auto" }}>
+      <div data-scroll-feed style={{ flex:1, overflowY:"auto" }}>
         <HeroSlider onCreateClick={onGoToCreate}/>
         <StatsBar/>
         <TrendingSection/>
@@ -442,7 +465,6 @@ function DiscoverScreen({ onGoToCreate }) {
           <div style={{ height:20 }}/>
         </div>
       </div>
-      <FloatingCreateBtn onClick={onGoToCreate}/>
     </>
   );
 }
