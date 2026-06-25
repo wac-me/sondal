@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Search, MessageCircle, Share2, TrendingUp, ChevronRight, User, Lock, Eye, Plus, BarChart2 } from "lucide-react";
 
 const theme = {
   bg: "#13141A", surface: "#1C1E26", surfaceHigh: "#232630",
@@ -149,50 +150,82 @@ function VoteButtons({ options, split, voted, onVote, hot }) {
 }
 
 // ─── Header ───────────────────────────────────────────────
-function StickyHeader({ nowActive }) {
-  const [nowVisible, setNowVisible] = useState(true);
-  const [hidden, setHidden]         = useState(false);
-  const lastScrollY = useRef(0);
-  const scrollEl    = useRef(null);
-
-  // Blink NOW! every 4s
+function NowBadge() {
+  // Pastylka "NOW!" widoczna 3s, potem tylko kropka przez 12.5s, w kółko
+  const [showText, setShowText] = useState(true);
   useEffect(() => {
-    if (!nowActive) return;
-    const id = setInterval(() => {
-      setNowVisible(false);
-      setTimeout(() => setNowVisible(true), 350);
-    }, 4000);
-    return () => clearInterval(id);
-  }, [nowActive]);
-
-  // Hide on scroll down, reveal on scroll up
-  // We attach to the nearest scrollable parent after mount
-  useEffect(() => {
-    const el = document.querySelector('[data-scroll-feed]');
-    if (!el) return;
-    scrollEl.current = el;
-    const onScroll = () => {
-      const y = el.scrollTop;
-      if (y > lastScrollY.current + 6 && y > 50) setHidden(true);
-      else if (y < lastScrollY.current - 4)       setHidden(false);
-      lastScrollY.current = y;
+    let t;
+    const cycle = () => {
+      setShowText(true);
+      t = setTimeout(() => {
+        setShowText(false);
+        t = setTimeout(cycle, 12500);
+      }, 3000);
     };
-    el.addEventListener('scroll', onScroll, { passive: true });
-    return () => el.removeEventListener('scroll', onScroll);
+    cycle();
+    return () => clearTimeout(t);
   }, []);
 
   return (
     <div style={{
-      position:"sticky", top:0, zIndex:200,
-      background:`${theme.bg}F2`, backdropFilter:"blur(12px)",
-      borderBottom:`1px solid ${theme.border}`,
-      padding:"10px 16px",
-      display:"flex", alignItems:"center", justifyContent:"space-between",
-      transform: hidden ? "translateY(-100%)" : "translateY(0)",
-      transition: "transform 0.3s cubic-bezier(.4,0,.2,1)",
+      display:"flex", alignItems:"center", justifyContent:"center",
+      gap: showText ? 5 : 0,
+      background:theme.redDim,
+      borderRadius:20,
+      paddingTop:5, paddingBottom:5,
+      paddingLeft:  showText ? 10 : 6,
+      paddingRight: showText ? 10 : 6,
+      overflow:"hidden",
+      transition:"padding 0.5s cubic-bezier(.4,0,.2,1), gap 0.5s cubic-bezier(.4,0,.2,1)",
     }}>
-      {/* Left — Logo */}
-      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+      <span style={{
+        width:7, height:7, borderRadius:"50%", background:theme.red,
+        display:"block", flexShrink:0,
+        animation:"pulsered 1.6s infinite",
+      }}/>
+      <span style={{
+        fontFamily:"'Plus Jakarta Sans', sans-serif", fontWeight:700,
+        fontSize:11, color:theme.red, letterSpacing:"0.08em",
+        maxWidth: showText ? 40 : 0,
+        opacity:  showText ? 1  : 0,
+        overflow:"hidden", whiteSpace:"nowrap",
+        transition:"max-width 0.5s cubic-bezier(.4,0,.2,1), opacity 0.35s ease",
+      }}>NOW!</span>
+    </div>
+  );
+}
+
+function StickyHeader({ nowActive }) {
+  const [hidden, setHidden] = useState(false);
+  const lastScrollY  = useRef(0);
+  const headerHeight = 64;
+
+  useEffect(() => {
+    const el = document.querySelector("[data-scroll-feed]");
+    if (!el) return;
+    const onScroll = () => {
+      const y = el.scrollTop;
+      if (y > lastScrollY.current + 6 && y > headerHeight) setHidden(true);
+      else if (y < lastScrollY.current - 4) setHidden(false);
+      lastScrollY.current = y;
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
+
+  return (
+    <div style={{
+      position:"absolute", top:0, left:0, right:0, zIndex:200,
+      background:`${theme.bg}F4`, backdropFilter:"blur(14px)",
+      borderBottom:`1px solid ${theme.border}`,
+      height:headerHeight,
+      display:"flex", alignItems:"center",
+      padding:"0 16px",
+      transform: hidden ? "translateY(-100%)" : "translateY(0)",
+      transition:"transform 0.32s cubic-bezier(.4,0,.2,1)",
+    }}>
+      {/* Logo — left */}
+      <div style={{ display:"flex", alignItems:"center", gap:8, flex:1 }}>
         <LogoMark size={28}/>
         <div>
           <div style={{ display:"flex", alignItems:"baseline", gap:2 }}>
@@ -203,20 +236,13 @@ function StickyHeader({ nowActive }) {
         </div>
       </div>
 
-      {/* Center — Search */}
-      <button style={{ background:"none", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", padding:"6px 10px" }}>
-        <span style={{ fontSize:18, color:theme.textMuted }}>🔍</span>
-      </button>
-
-      {/* Right — NOW! badge */}
-      {nowActive ? (
-        <div style={{ display:"flex", alignItems:"center", gap:5, background:theme.redDim, border:`1px solid ${theme.redBorder}`, borderRadius:20, padding:"4px 10px", opacity: nowVisible ? 1 : 0.15, transition:"opacity 0.35s ease" }}>
-          <span style={{ width:6, height:6, borderRadius:"50%", background:theme.red, display:"inline-block", animation:"pulsered 1.8s infinite" }}/>
-          <span style={{ fontFamily:"'Plus Jakarta Sans', sans-serif", fontWeight:700, fontSize:11, color:theme.red, letterSpacing:"0.08em" }}>NOW!</span>
-        </div>
-      ) : (
-        <div style={{ width:72 }}/>
-      )}
+      {/* NOW! badge — right side, search optically between logo and badge */}
+      <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+        <button style={{ background:"none", border:"none", cursor:"pointer", display:"flex", alignItems:"center", padding:6 }}>
+          <Search size={18} color={theme.textMuted} strokeWidth={1.8}/>
+        </button>
+        {nowActive && <NowBadge/>}
+      </div>
     </div>
   );
 }
@@ -410,7 +436,7 @@ function TrendingSection() {
               <p style={{ color:theme.text, fontFamily:"Inter, sans-serif", fontSize:13, margin:"5px 0 3px", lineHeight:1.4 }}>{p.question}</p>
               <span style={{ color:theme.textDim, fontFamily:"Inter, sans-serif", fontSize:10 }}>{p.votes.toLocaleString()} głosów</span>
             </div>
-            <span style={{ color:theme.accent, fontSize:18, flexShrink:0 }}>›</span>
+            <ChevronRight size={18} color={theme.accent} strokeWidth={1.8}/>
           </div>
         ))}
       </div>
@@ -437,13 +463,81 @@ function PollCard({ poll }) {
       <VoteButtons options={poll.options} split={poll.baseSplit} voted={voted} onVote={setVoted}/>
       {voted!==null && <p style={{ color:theme.textDim, fontSize:11, margin:"8px 0 0", fontFamily:"Inter, sans-serif" }}>{poll.totalVotes.toLocaleString()} głosów łącznie</p>}
       <div style={{ display:"flex", gap:16, marginTop:10, paddingTop:10, borderTop:`1px solid ${theme.border}` }}>
-        <span style={{ color:theme.textDim, fontSize:12, fontFamily:"Inter, sans-serif", cursor:"pointer" }}>💬 Dyskusja</span>
-        <span style={{ color:theme.textDim, fontSize:12, fontFamily:"Inter, sans-serif", cursor:"pointer" }}>↗ Udostępnij</span>
+        <span style={{ color:theme.textDim, fontSize:12, fontFamily:"Inter, sans-serif", cursor:"pointer", display:"flex", alignItems:"center", gap:4 }}><MessageCircle size={13} strokeWidth={1.8}/> Dyskusja</span>
+        <span style={{ color:theme.textDim, fontSize:12, fontFamily:"Inter, sans-serif", cursor:"pointer", display:"flex", alignItems:"center", gap:4 }}><Share2 size={13} strokeWidth={1.8}/> Udostępnij</span>
       </div>
     </div>
   );
 }
 
+
+// ─── Ticker Bar ───────────────────────────────────────────
+const tickerItems = [
+  { label:"USD/PLN", value:"3,942", delta:"+0,012", pos:true },
+  { label:"EUR/PLN", value:"4,271", delta:"-0,008", pos:false },
+  { label:"GBP/PLN", value:"4,981", delta:"+0,021", pos:true },
+  { label:"WIG20",   value:"2 341", delta:"+1,2%",  pos:true },
+  { label:"S&P 500", value:"5 487", delta:"+0,4%",  pos:true },
+  { label:"DAX",     value:"18 902",delta:"-0,3%",  pos:false },
+  { label:"GOLD",    value:"2 318$", delta:"+0,8%", pos:true },
+  { label:"BRENT",   value:"83,4$",  delta:"-1,1%", pos:false },
+  { label:"BTC",     value:"67 200$",delta:"+2,3%", pos:true },
+  { label:"SILVER",  value:"29,1$",  delta:"+0,5%", pos:true },
+  { label:"EUR/USD", value:"1,082",  delta:"-0,003",pos:false },
+  { label:"COPPER",  value:"4,51$",  delta:"+0,7%", pos:true },
+];
+
+function TickerBar() {
+  const trackRef = useRef(null);
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    let frame, pos = 0;
+    const speed = 0.6;
+    const step = () => {
+      pos += speed;
+      if (pos >= el.scrollWidth / 2) pos = 0;
+      el.scrollLeft = pos;
+      frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+    const pause  = () => cancelAnimationFrame(frame);
+    const resume = () => { frame = requestAnimationFrame(step); };
+    el.addEventListener("mouseenter", pause);
+    el.addEventListener("mouseleave", resume);
+    el.addEventListener("touchstart", pause, { passive:true });
+    el.addEventListener("touchend",   resume);
+    return () => {
+      cancelAnimationFrame(frame);
+      el.removeEventListener("mouseenter", pause);
+      el.removeEventListener("mouseleave", resume);
+    };
+  }, []);
+
+  const items = [...tickerItems, ...tickerItems]; // double for seamless loop
+
+  return (
+    <div style={{ borderBottom:`1px solid ${theme.border}`, background:theme.bg }}>
+      <div ref={trackRef} style={{
+        display:"flex", alignItems:"center", gap:0,
+        overflowX:"auto", scrollbarWidth:"none",
+        height:20,
+      }}>
+        {items.map((item, i) => (
+          <div key={i} style={{
+            display:"flex", alignItems:"center", gap:6,
+            padding:"0 16px", flexShrink:0, height:"100%",
+            borderRight:`1px solid ${theme.border}`,
+          }}>
+            <span style={{ color:theme.textDim, fontFamily:"Inter, sans-serif", fontSize:9, fontWeight:600, letterSpacing:"0.06em", textTransform:"uppercase", whiteSpace:"nowrap" }}>{item.label}</span>
+            <span style={{ color:theme.text, fontFamily:"Inter, sans-serif", fontSize:10, fontWeight:700, whiteSpace:"nowrap" }}>{item.value}</span>
+            <span style={{ color: item.pos ? theme.green : theme.red, fontFamily:"Inter, sans-serif", fontSize:9, fontWeight:600, whiteSpace:"nowrap" }}>{item.delta}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // ─── Discover ─────────────────────────────────────────────
 function DiscoverScreen({ onGoToCreate }) {
@@ -451,7 +545,8 @@ function DiscoverScreen({ onGoToCreate }) {
   return (
     <>
       <StickyHeader nowActive={true} onCreateClick={onGoToCreate}/>
-      <div data-scroll-feed style={{ flex:1, overflowY:"auto" }}>
+      <div data-scroll-feed style={{ flex:1, overflowY:"auto", position:"relative", paddingTop:64 }}>
+        <TickerBar/>
         <HeroSlider onCreateClick={onGoToCreate}/>
         <StatsBar/>
         <TrendingSection/>
@@ -474,7 +569,7 @@ function Toggle({ label, icon, value, onChange }) {
   return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"13px 0", borderBottom:`1px solid ${theme.border}` }}>
       <div style={{ display:"flex", gap:10, alignItems:"center" }}>
-        <span style={{ fontSize:15 }}>{icon}</span>
+        <div style={{ display:"flex", alignItems:"center" }}>{icon}</div>
         <span style={{ color:theme.text, fontFamily:"Inter, sans-serif", fontSize:14 }}>{label}</span>
       </div>
       <div onClick={()=>onChange(!value)} style={{ width:42, height:24, borderRadius:12, background: value?theme.accent:theme.border, cursor:"pointer", position:"relative", transition:"background 0.2s" }}>
@@ -534,8 +629,8 @@ function CreatorScreen({ onSuccess }) {
           </div>
         </div>
         <div style={{ marginBottom:16 }}>
-          <Toggle label="Publiczna w portalu" icon="👁" value={isPublic} onChange={setIsPublic}/>
-          <Toggle label="Anonimowe głosowanie" icon="🔒" value={isAnon} onChange={setIsAnon}/>
+          <Toggle label="Publiczna w portalu" icon={<Eye size={16} color={theme.textMuted} strokeWidth={1.8}/>} value={isPublic} onChange={setIsPublic}/>
+          <Toggle label="Anonimowe głosowanie" icon={<Lock size={16} color={theme.textMuted} strokeWidth={1.8}/>} value={isAnon} onChange={setIsAnon}/>
         </div>
         <div style={{ height:80 }}/>
       </div>
@@ -613,16 +708,16 @@ function SuccessScreen({ pollData, onReset, onGoToDiscover }) {
 // ─── Bottom Nav ───────────────────────────────────────────
 function BottomNav({ active, setActive }) {
   const items = [
-    { id:"discover", icon:"◎", label:"Odkrywaj" },
-    { id:"create",   icon:"+", label:"Utwórz", main:true },
-    { id:"discuss",  icon:"💬",label:"Dyskusje" },
-    { id:"account",  icon:"◉", label:"Konto" },
+    { id:"discover", icon:<BarChart2 size={20} strokeWidth={1.8}/>, label:"Odkrywaj" },
+    { id:"create",   icon:<Plus size={22} strokeWidth={2.5}/>, label:"Utwórz", main:true },
+    { id:"discuss",  icon:<MessageCircle size={20} strokeWidth={1.8}/>, label:"Dyskusje" },
+    { id:"account",  icon:<User size={20} strokeWidth={1.8}/>, label:"Konto" },
   ];
   return (
     <div style={{ position:"sticky", bottom:0, background:`${theme.surface}F5`, backdropFilter:"blur(12px)", borderTop:`1px solid ${theme.border}`, display:"flex", justifyContent:"space-around", padding:"10px 0 14px", zIndex:100 }}>
       {items.map(item => (
         <button key={item.id} onClick={()=>setActive(item.id)} style={{ background: item.main?theme.accent:"transparent", border:"none", borderRadius: item.main?12:0, padding: item.main?"8px 20px":"4px 12px", cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:3 }}>
-          <span style={{ fontSize: item.main?20:16, color: item.main?"#fff":(active===item.id?theme.accent:theme.textDim), fontWeight: item.main?900:400, lineHeight:1 }}>{item.icon}</span>
+          <div style={{ color: item.main?"#fff":(active===item.id?theme.accent:theme.textDim), display:"flex", alignItems:"center", justifyContent:"center", lineHeight:1 }}>{item.icon}</div>
           <span style={{ fontSize:10, fontFamily:"Inter, sans-serif", color: item.main?"#fff":(active===item.id?theme.accent:theme.textDim), fontWeight: item.main?700:(active===item.id?600:400) }}>{item.label}</span>
         </button>
       ))}
@@ -686,7 +781,7 @@ export default function SondalApp() {
           {activeNav==="discuss"  && (
             <><StickyHeader nowActive={false}/>
             <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:12, padding:32 }}>
-              <span style={{ fontSize:40 }}>💬</span>
+              <MessageCircle size={40} color={theme.textMuted} strokeWidth={1.5}/>
               <p style={{ color:theme.textMuted, fontFamily:"Inter, sans-serif", fontSize:15, textAlign:"center" }}>Dyskusje — wkrótce dla zalogowanych.</p>
             </div></>
           )}
