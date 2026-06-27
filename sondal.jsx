@@ -579,7 +579,7 @@ function Toggle({ label, icon, value, onChange }) {
   );
 }
 
-function CreatorScreen({ onSuccess }) {
+function CreatorScreen({ onSuccess, onClose }) {
   const [question, setQuestion] = useState("");
   const [options, setOptions]   = useState(["",""]);
   const [isPublic, setIsPublic] = useState(true);
@@ -594,9 +594,12 @@ function CreatorScreen({ onSuccess }) {
   return (
     <>
       <StickyHeader nowActive={false}/>
-      <div style={{ padding:"16px 16px 10px", borderBottom:`1px solid ${theme.border}` }}>
-        <p style={{ color:theme.textDim, fontFamily:"Inter, sans-serif", fontSize:10, margin:0, textTransform:"uppercase", letterSpacing:"0.06em" }}>Nowa sonda</p>
-        <h2 style={{ color:theme.text, fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:18, fontWeight:700, margin:"2px 0 0" }}>Kreator</h2>
+      <div style={{ padding:"14px 16px 10px", borderBottom:`1px solid ${theme.border}`, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <div>
+          <p style={{ color:theme.textDim, fontFamily:"Inter, sans-serif", fontSize:10, margin:0, textTransform:"uppercase", letterSpacing:"0.06em" }}>Nowa sonda</p>
+          <h2 style={{ color:theme.text, fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:18, fontWeight:700, margin:"2px 0 0" }}>Kreator</h2>
+        </div>
+        {onClose && <button onClick={onClose} style={{ background:"none", border:"none", cursor:"pointer", padding:6, color:theme.textMuted }}><Plus size={22} strokeWidth={1.8} style={{ transform:"rotate(45deg)" }}/></button>}
       </div>
       <div style={{ flex:1, overflowY:"auto", padding:"16px 16px 0" }}>
         <div style={{ marginBottom:16 }}>
@@ -727,39 +730,37 @@ function BottomNav({ active, setActive }) {
 
 // ─── Root ─────────────────────────────────────────────────
 export default function SondalApp() {
-  const [activeNav,    setActiveNav]    = useState("discover");
-  const [creatorStep,  setCreatorStep]  = useState("form");
-  const [pollData,     setPollData]     = useState(null);
-  const [screenAnim,   setScreenAnim]   = useState("idle"); // "idle"|"swipe-out"|"swipe-in"
+  const [activeNav,   setActiveNav]   = useState("discover");
+  const [creatorStep, setCreatorStep] = useState("form");
+  const [pollData,    setPollData]    = useState(null);
+  const [creatorOpen, setCreatorOpen] = useState(false);   // sheet visibility
+  const [creatorAnim, setCreatorAnim] = useState("closed"); // "closed"|"opening"|"open"|"closing"
 
-  const switchTo = (id) => {
-    if (id === activeNav) return;
-    setScreenAnim("swipe-out");
-    setTimeout(() => {
-      setActiveNav(id);
-      if (id==="create") setCreatorStep("form");
-      setScreenAnim("swipe-in");
-      setTimeout(() => setScreenAnim("idle"), 320);
-    }, 260);
+  // Open creator sheet from bottom
+  const openCreator = () => {
+    setCreatorStep("form");
+    setCreatorOpen(true);
+    setCreatorAnim("opening");
+    setTimeout(() => setCreatorAnim("open"), 20); // trigger CSS transition
   };
 
-  const handleNavChange = switchTo;
-  const handleSuccess   = data => { setPollData(data); setCreatorStep("success"); };
-  const handleReset     = () => { setPollData(null); setCreatorStep("form"); };
-  const handleGoToDiscover = () => switchTo("discover");
-
-  const screenStyle = {
-    flex:1, display:"flex", flexDirection:"column", overflow:"hidden",
-    transform: screenAnim==="swipe-out" ? "translateX(-6%) scale(0.97)"
-             : screenAnim==="swipe-in"  ? "translateX(4%)"
-             : "translateX(0) scale(1)",
-    opacity: screenAnim==="swipe-out" ? 0 : screenAnim==="swipe-in" ? 0 : 1,
-    transition: screenAnim==="swipe-out"
-      ? "transform 0.26s ease-in, opacity 0.22s ease-in"
-      : screenAnim==="swipe-in"
-      ? "transform 0.28s cubic-bezier(.22,.68,0,1.1), opacity 0.2s ease-out"
-      : "none",
+  // Close creator sheet back down
+  const closeCreator = () => {
+    setCreatorAnim("closing");
+    setTimeout(() => { setCreatorOpen(false); setCreatorAnim("closed"); }, 380);
   };
+
+  const handleNavChange = (id) => {
+    if (id === "create") { openCreator(); return; }
+    setActiveNav(id);
+  };
+
+  const handleSuccess = data => { setPollData(data); setCreatorStep("success"); };
+  const handleReset   = () => { setPollData(null); setCreatorStep("form"); };
+  const handleGoToDiscover = () => { closeCreator(); setActiveNav("discover"); };
+
+  const isOpen   = creatorAnim === "open" || creatorAnim === "opening";
+  const sheetY   = creatorAnim === "open" ? "0%" : "100%";
 
   return (
     <>
@@ -773,12 +774,14 @@ export default function SondalApp() {
         ::-webkit-scrollbar-thumb { background:#2A2D3A; border-radius:2px; }
       `}</style>
 
-      <div style={{ background:theme.bg, height:"100dvh", maxWidth:430, margin:"0 auto", display:"flex", flexDirection:"column", fontFamily:"Inter, sans-serif", overflow:"hidden" }}>
-        <div style={{ ...screenStyle, flex:1, minHeight:0 }}>
-          {activeNav==="discover" && <DiscoverScreen onGoToCreate={()=>switchTo("create")}/>}
-          {activeNav==="create"   && creatorStep==="form"    && <CreatorScreen onSuccess={handleSuccess}/>}
-          {activeNav==="create"   && creatorStep==="success" && <SuccessScreen pollData={pollData} onReset={handleReset} onGoToDiscover={handleGoToDiscover}/>}
-          {activeNav==="discuss"  && (
+      <div style={{ background:theme.bg, height:"100dvh", maxWidth:430, margin:"0 auto", display:"flex", flexDirection:"column", fontFamily:"Inter, sans-serif", overflow:"hidden", position:"relative" }}>
+
+        {/* ── Main screens ── */}
+        <div style={{ flex:1, minHeight:0, display:"flex", flexDirection:"column",
+          overflow:"hidden",
+        }}>
+          {activeNav==="discover" && <DiscoverScreen onGoToCreate={openCreator}/>}
+          {activeNav==="discuss" && (
             <><StickyHeader nowActive={false}/>
             <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:12, padding:32 }}>
               <MessageCircle size={40} color={theme.textMuted} strokeWidth={1.5}/>
@@ -797,8 +800,30 @@ export default function SondalApp() {
           )}
         </div>
 
-        {/* Navbar always pinned outside transform context */}
-        <BottomNav active={activeNav} setActive={handleNavChange}/>
+        {/* ── Bottom Sheet — Creator ── */}
+        {creatorOpen && (
+          <>
+            {/* Sheet — full screen */}
+            <div style={{
+              position:"absolute", inset:0, zIndex:500,
+              background:theme.bg,
+              display:"flex", flexDirection:"column",
+              transform:`translateY(${sheetY})`,
+              transition:"transform 0.4s cubic-bezier(.4,0,.2,1)",
+            }}>
+              <div style={{ flexShrink:0, height:0 }}/>
+
+              {/* Content */}
+              <div style={{ flex:1, minHeight:0, display:"flex", flexDirection:"column" }}>
+                {creatorStep==="form" && <CreatorScreen onSuccess={handleSuccess} onClose={closeCreator}/>}
+                {creatorStep==="success" && <SuccessScreen pollData={pollData} onReset={handleReset} onGoToDiscover={handleGoToDiscover}/>}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ── Navbar ── */}
+        <BottomNav active={creatorOpen ? "create" : activeNav} setActive={handleNavChange}/>
       </div>
     </>
   );
