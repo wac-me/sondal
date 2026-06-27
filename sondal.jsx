@@ -593,13 +593,26 @@ function CreatorScreen({ onSuccess, onClose }) {
 
   return (
     <>
-      <StickyHeader nowActive={false}/>
-      <div style={{ padding:"14px 16px 10px", borderBottom:`1px solid ${theme.border}`, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-        <div>
-          <p style={{ color:theme.textDim, fontFamily:"Inter, sans-serif", fontSize:10, margin:0, textTransform:"uppercase", letterSpacing:"0.06em" }}>Nowa sonda</p>
-          <h2 style={{ color:theme.text, fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:18, fontWeight:700, margin:"2px 0 0" }}>Kreator</h2>
+      <div style={{ height:64, padding:"0 16px", borderBottom:`1px solid ${theme.border}`, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0, background:`${theme.bg}F4`, backdropFilter:"blur(14px)" }}>
+        {/* Logo — identyczne jak w głównym headerze */}
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          <LogoMark size={28}/>
+          <div>
+            <div style={{ display:"flex", alignItems:"baseline", gap:2 }}>
+              <span style={{ fontFamily:"'Plus Jakarta Sans', sans-serif", fontWeight:800, fontSize:18, color:theme.text, letterSpacing:"-0.5px" }}>sondal</span>
+              <span style={{ fontFamily:"Inter, sans-serif", fontWeight:500, fontSize:12, color:theme.accent }}>.top</span>
+            </div>
+            <p style={{ color:theme.textDim, fontFamily:"Inter, sans-serif", fontSize:8, margin:0, letterSpacing:"0.06em", textTransform:"uppercase" }}>Sonda to argument.</p>
+          </div>
         </div>
-        {onClose && <button onClick={onClose} style={{ background:"none", border:"none", cursor:"pointer", padding:6, color:theme.textMuted }}><Plus size={22} strokeWidth={1.8} style={{ transform:"rotate(45deg)" }}/></button>}
+        {/* KREATOR label */}
+        <span style={{ fontFamily:"'Plus Jakarta Sans', sans-serif", fontWeight:800, fontSize:13, color:theme.accent, letterSpacing:"0.1em" }}>KREATOR</span>
+        {/* Close — strzałka w dół */}
+        {onClose && (
+          <button onClick={onClose} style={{ background:"none", border:"none", cursor:"pointer", padding:8, color:theme.textMuted, display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <ChevronRight size={24} strokeWidth={2} color={theme.textMuted} style={{ transform:"rotate(90deg)" }}/>
+          </button>
+        )}
       </div>
       <div style={{ flex:1, overflowY:"auto", padding:"16px 16px 0" }}>
         <div style={{ marginBottom:16 }}>
