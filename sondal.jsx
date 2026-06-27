@@ -55,6 +55,46 @@ const trendingPolls = [
   { id:12, tag:"#technologia", question:"Czy AI zastąpi Twoje stanowisko pracy w ciągu 10 lat?", votes:6780 },
 ];
 
+
+const trendingPollDetails = {
+  10: {
+    id:10, tag:"#warszawa", user:"@miasto_warszawa", avatar:"M", time:"2 godz. temu",
+    question:"Rondo przy Dworcu Centralnym — naziemne przejścia dla pieszych?",
+    options:["Tak — ułatwi życie pieszym","Nie — sparaliżuje ruch aut"],
+    split:[64,36], totalVotes:2341,
+    comments:[
+      { id:1, user:"@piotr_w", vote:0, time:"1 godz. temu", text:"Każde przejście naziemne to mniejsze bezpieczeństwo dla pieszych. Tunele są lepsze." },
+      { id:2, user:"@asia_piesza", vote:0, time:"45 min temu", text:"Nareszcie ktoś pyta! Jako mama z wózkiem przejście podziemne to koszmar." },
+      { id:3, user:"@kierowca99", vote:1, time:"30 min temu", text:"Rondo działa sprawnie, przejścia naziemne to paraliż. Nie tykajmy tego." },
+      { id:4, user:"@urbanista_pl", vote:0, time:"12 min temu", text:"Dane z Amsterdamu i Kopenhagi jasno pokazują że piesi na poziomie = miasto żywe." },
+    ],
+  },
+  11: {
+    id:11, tag:"#polityka", user:"@debata_pl", avatar:"D", time:"5 godz. temu",
+    question:"Czy popierasz skrócenie tygodnia pracy do 4 dni?",
+    options:["Tak, chcę 4-dniowego tygodnia","Nie, gospodarka tego nie wytrzyma"],
+    split:[71,29], totalVotes:9102,
+    comments:[
+      { id:1, user:"@ewa_hr", vote:0, time:"4 godz. temu", text:"Islandia testowała 4 dni przez 4 lata — produktywność wzrosła. Fakty są po naszej stronie." },
+      { id:2, user:"@jan_kowal", vote:1, time:"3 godz. temu", text:"Małe firmy tego nie przeżyją. Ktoś pomyślał o budowlance, handlu, gastronomii?" },
+      { id:3, user:"@marta_z", vote:0, time:"2 godz. temu", text:"Mój szef już testuje piątki wolne. Wyniki lepsze niż rok temu." },
+      { id:4, user:"@ekonom_krytyk", vote:1, time:"1 godz. temu", text:"Porównywanie Islandii sektora publicznego do polskiej produkcji to nieporozumienie." },
+      { id:5, user:"@pracownik23", vote:0, time:"20 min temu", text:"Choć raz coś dla ludzi a nie dla korporacji." },
+    ],
+  },
+  12: {
+    id:12, tag:"#technologia", user:"@ai_watch", avatar:"A", time:"8 godz. temu",
+    question:"Czy AI zastąpi Twoje stanowisko pracy w ciągu 10 lat?",
+    options:["Tak, boję się o swoją pracę","Nie, moja praca jest bezpieczna","Jeszcze nie wiem"],
+    split:[38,35,27], totalVotes:6780,
+    comments:[
+      { id:1, user:"@dev_senior", vote:1, time:"7 godz. temu", text:"Jestem programistą od 15 lat. AI mi pomaga, nie zastępuje. Na razie." },
+      { id:2, user:"@grafik_free", vote:0, time:"6 godz. temu", text:"Jako grafik widzę jak Midjourney zabiera mi zlecenia. To nie teoria." },
+      { id:3, user:"@cfo_firma", vote:1, time:"4 godz. temu", text:"W ciągu 2 lat zautomatyzowaliśmy 3 stanowiska. Nikt nie stracił pracy — przeszli wyżej." },
+    ],
+  },
+};
+
 const communityPolls = [
   { id:20, user:"@ania_wawa", avatar:"A", time:"8 min temu", tag:"#lokalne",
     question:"Czy rondo przy Dworcu Centralnym powinno mieć naziemne przejścia dla pieszych?",
@@ -416,8 +456,134 @@ function StatsBar() {
   );
 }
 
+// ─── Sonda Detail ─────────────────────────────────────────
+function SondaDetail({ poll, onClose }) {
+  const [voted, setVoted] = useState(null);
+  const [activeTab, setActiveTab] = useState("all"); // "all"|"0"|"1"|"2"
+
+  const filteredComments = poll.comments.filter(c =>
+    activeTab === "all" ? true : c.vote === parseInt(activeTab)
+  );
+
+  return (
+    <div style={{ position:"absolute", inset:0, zIndex:300, background:theme.bg, display:"flex", flexDirection:"column" }}>
+
+      {/* Header */}
+      <div style={{ height:64, padding:"0 16px", borderBottom:`1px solid ${theme.border}`, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0, background:`${theme.bg}F4`, backdropFilter:"blur(14px)" }}>
+        <button onClick={onClose} style={{ background:"none", border:"none", cursor:"pointer", padding:8, display:"flex", alignItems:"center", gap:6, color:theme.textMuted }}>
+          <ChevronRight size={20} strokeWidth={2} color={theme.textMuted} style={{ transform:"rotate(180deg)" }}/>
+          <span style={{ fontFamily:"Inter, sans-serif", fontSize:13 }}>Wróć</span>
+        </button>
+        <div style={{ display:"flex", gap:6, alignItems:"center" }}>
+          <Tag>{poll.tag}</Tag>
+        </div>
+        <button style={{ background:"none", border:"none", cursor:"pointer", padding:8, display:"flex", alignItems:"center" }}>
+          <Share2 size={18} color={theme.textMuted} strokeWidth={1.8}/>
+        </button>
+      </div>
+
+      <div style={{ flex:1, overflowY:"auto" }}>
+
+        {/* Poll card */}
+        <div style={{ padding:"18px 16px", borderBottom:`1px solid ${theme.border}` }}>
+          <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:12 }}>
+            <div style={{ width:28, height:28, borderRadius:"50%", background:theme.indigo, border:`1px solid ${theme.borderAccent}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, color:theme.accent, fontWeight:700, flexShrink:0 }}>{poll.avatar}</div>
+            <div>
+              <span style={{ color:theme.text, fontSize:12, fontFamily:"Inter, sans-serif", fontWeight:600 }}>{poll.user}</span>
+              <span style={{ color:theme.textDim, fontSize:11, fontFamily:"Inter, sans-serif", marginLeft:6 }}>{poll.time}</span>
+            </div>
+          </div>
+
+          <h2 style={{ color:theme.text, fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:18, fontWeight:700, lineHeight:1.4, margin:"0 0 16px" }}>{poll.question}</h2>
+
+          {/* Vote or results */}
+          {voted === null ? (
+            <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+              {poll.options.map((opt,i) => (
+                <button key={i} onClick={() => setVoted(i)}
+                  style={{ background:theme.surface, border:`1px solid ${theme.border}`, borderRadius:10, padding:"13px 16px", color:theme.text, fontFamily:"Inter, sans-serif", fontSize:14, textAlign:"left", cursor:"pointer", transition:"border-color 0.15s" }}
+                  onMouseEnter={e=>e.currentTarget.style.borderColor=theme.accent}
+                  onMouseLeave={e=>e.currentTarget.style.borderColor=theme.border}
+                >{opt}</button>
+              ))}
+            </div>
+          ) : (
+            <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+              {poll.options.map((opt,i) => (
+                <div key={i}>
+                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5 }}>
+                    <span style={{ color: i===voted ? theme.accentBright : theme.textMuted, fontSize:13, fontFamily:"Inter, sans-serif", fontWeight: i===voted ? 600 : 400 }}>{opt} {i===voted && "✓"}</span>
+                    <span style={{ color:theme.textMuted, fontSize:13, fontFamily:"Inter, sans-serif", fontWeight:700 }}>{poll.split[i]}%</span>
+                  </div>
+                  <div style={{ height:8, background:theme.border, borderRadius:4, overflow:"hidden" }}>
+                    <div style={{ width:`${poll.split[i]}%`, height:"100%", background: i===voted ? theme.accent : theme.textDim, borderRadius:4, transition:"width 0.6s ease" }}/>
+                  </div>
+                </div>
+              ))}
+              <p style={{ color:theme.textDim, fontSize:12, fontFamily:"Inter, sans-serif", marginTop:4 }}>{poll.totalVotes.toLocaleString()} głosów łącznie</p>
+            </div>
+          )}
+        </div>
+
+        {/* Discussion */}
+        <div style={{ padding:"16px 16px 0" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14 }}>
+            <div style={{ width:3, height:14, background:theme.accent, borderRadius:2 }}/>
+            <span style={{ color:theme.text, fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:15, fontWeight:700 }}>Dyskusja</span>
+            <span style={{ color:theme.textDim, fontSize:12, fontFamily:"Inter, sans-serif" }}>({poll.comments.length})</span>
+          </div>
+
+          {/* Filter tabs — by vote */}
+          {voted !== null && (
+            <div style={{ display:"flex", gap:7, marginBottom:14, overflowX:"auto", scrollbarWidth:"none" }}>
+              {[
+                { key:"all", label:"Wszystkie" },
+                ...poll.options.map((opt,i) => ({ key:String(i), label:opt.split(" ")[0]+"…" }))
+              ].map(tab => (
+                <button key={tab.key} onClick={()=>setActiveTab(tab.key)} style={{ background: activeTab===tab.key ? theme.accent : theme.surface, color: activeTab===tab.key ? "#fff" : theme.textMuted, border:"none", borderRadius:20, padding:"5px 12px", fontSize:11, fontFamily:"Inter, sans-serif", fontWeight: activeTab===tab.key ? 700 : 400, cursor:"pointer", whiteSpace:"nowrap", flexShrink:0 }}>{tab.label}</button>
+              ))}
+            </div>
+          )}
+
+          {/* Comments */}
+          <div style={{ display:"flex", flexDirection:"column", gap:12, paddingBottom:20 }}>
+            {filteredComments.map(c => (
+              <div key={c.id} style={{ background:theme.surface, borderRadius:12, padding:"12px 14px", border:`1px solid ${theme.border}` }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8 }}>
+                  <div style={{ display:"flex", gap:7, alignItems:"center" }}>
+                    <div style={{ width:24, height:24, borderRadius:"50%", background:theme.indigo, display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, color:theme.accent, fontWeight:700, flexShrink:0 }}>{c.user[1].toUpperCase()}</div>
+                    <div>
+                      <span style={{ color:theme.text, fontSize:12, fontFamily:"Inter, sans-serif", fontWeight:600 }}>{c.user}</span>
+                      <span style={{ color:theme.textDim, fontSize:10, fontFamily:"Inter, sans-serif", marginLeft:6 }}>{c.time}</span>
+                    </div>
+                  </div>
+                  {/* Vote badge */}
+                  <span style={{ background: c.vote === 0 ? `${theme.accent}20` : `${theme.red}15`, color: c.vote === 0 ? theme.accent : theme.red, fontSize:9, fontFamily:"Inter, sans-serif", fontWeight:700, padding:"2px 7px", borderRadius:4, flexShrink:0, letterSpacing:"0.04em" }}>
+                    {poll.options[c.vote]?.split(" ")[0]}
+                  </span>
+                </div>
+                <p style={{ color:theme.text, fontFamily:"Inter, sans-serif", fontSize:13, lineHeight:1.55, margin:0 }}>{c.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Comment input */}
+      <div style={{ padding:"10px 16px 16px", borderTop:`1px solid ${theme.border}`, background:theme.bg, display:"flex", gap:10, alignItems:"center" }}>
+        <div style={{ flex:1, background:theme.surface, border:`1px solid ${theme.border}`, borderRadius:20, padding:"10px 14px" }}>
+          <span style={{ color:theme.textDim, fontFamily:"Inter, sans-serif", fontSize:13 }}>Dodaj komentarz…</span>
+        </div>
+        <button style={{ background:theme.accent, border:"none", borderRadius:"50%", width:38, height:38, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0 }}>
+          <ChevronRight size={18} color="#fff" strokeWidth={2.5}/>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Trending ─────────────────────────────────────────────
-function TrendingSection() {
+function TrendingSection({ onPollOpen }) {
   return (
     <div style={{ padding:"14px 16px", borderBottom:`1px solid ${theme.border}` }}>
       <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
@@ -427,7 +593,8 @@ function TrendingSection() {
       </div>
       <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
         {trendingPolls.map((p,i) => (
-          <div key={p.id} style={{ display:"flex", gap:12, alignItems:"center", padding:"10px 12px", background:theme.surface, borderRadius:10, border:`1px solid ${theme.border}`, cursor:"pointer", transition:"border-color 0.15s" }}
+          <div key={p.id} onClick={() => onPollOpen && onPollOpen(p.id)}
+            style={{ display:"flex", gap:12, alignItems:"center", padding:"10px 12px", background:theme.surface, borderRadius:10, border:`1px solid ${theme.border}`, cursor:"pointer", transition:"border-color 0.15s" }}
             onMouseEnter={e=>e.currentTarget.style.borderColor=theme.borderAccent}
             onMouseLeave={e=>e.currentTarget.style.borderColor=theme.border}>
             <span style={{ color:theme.textDim, fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:20, fontWeight:800, width:24, textAlign:"center", flexShrink:0 }}>{i+1}</span>
@@ -542,14 +709,26 @@ function TickerBar() {
 // ─── Discover ─────────────────────────────────────────────
 function DiscoverScreen({ onGoToCreate }) {
   const [activeCat, setActiveCat] = useState("#Wszystkie");
+  const [detailId,  setDetailId]  = useState(null);
+  const [detailAnim, setDetailAnim] = useState("closed"); // "closed"|"open"|"closing"
+
+  const openDetail = (id) => {
+    setDetailId(id);
+    setDetailAnim("open");
+  };
+  const closeDetail = () => {
+    setDetailAnim("closing");
+    setTimeout(() => { setDetailId(null); setDetailAnim("closed"); }, 340);
+  };
+
   return (
-    <>
+    <div style={{ flex:1, display:"flex", flexDirection:"column", position:"relative", overflow:"hidden" }}>
       <StickyHeader nowActive={true} onCreateClick={onGoToCreate}/>
       <div data-scroll-feed style={{ flex:1, overflowY:"auto", position:"relative", paddingTop:64 }}>
         <TickerBar/>
         <HeroSlider onCreateClick={onGoToCreate}/>
         <StatsBar/>
-        <TrendingSection/>
+        <TrendingSection onPollOpen={openDetail}/>
         <div style={{ display:"flex", gap:7, padding:"10px 16px", overflowX:"auto", scrollbarWidth:"none", borderBottom:`1px solid ${theme.border}` }}>
           {categories.map(cat => (
             <button key={cat} onClick={()=>setActiveCat(cat)} style={{ background: activeCat===cat?theme.accent:theme.surface, color: activeCat===cat?"#fff":theme.textMuted, border:`1px solid ${activeCat===cat?"transparent":theme.border}`, borderRadius:20, padding:"6px 13px", fontSize:11, fontFamily:"Inter, sans-serif", fontWeight: activeCat===cat?700:400, cursor:"pointer", whiteSpace:"nowrap", transition:"all 0.15s" }}>{cat}</button>
@@ -560,7 +739,20 @@ function DiscoverScreen({ onGoToCreate }) {
           <div style={{ height:20 }}/>
         </div>
       </div>
-    </>
+
+      {/* Sonda Detail — slides in from right */}
+      {detailId !== null && trendingPollDetails[detailId] && (
+        <div style={{
+          position:"absolute", inset:0, zIndex:300,
+          transform: detailAnim==="open" ? "translateX(0)" : "translateX(100%)",
+          transition: detailAnim==="closing"
+            ? "transform 0.34s cubic-bezier(.4,0,.2,1)"
+            : "transform 0.38s cubic-bezier(.22,.68,0,1.1)",
+        }}>
+          <SondaDetail poll={trendingPollDetails[detailId]} onClose={closeDetail}/>
+        </div>
+      )}
+    </div>
   );
 }
 
