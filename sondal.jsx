@@ -730,11 +730,56 @@ function TickerBar() {
   );
 }
 
+// ─── Empty States ─────────────────────────────────────────
+function EmptyState({ icon, title, subtitle, actionLabel, onAction }) {
+  return (
+    <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"40px 32px", textAlign:"center" }}>
+      <div style={{
+        width:64, height:64, borderRadius:20,
+        background:theme.accentDim, border:`1px solid ${theme.borderAccent}`,
+        display:"flex", alignItems:"center", justifyContent:"center",
+        marginBottom:16,
+      }}>
+        {icon}
+      </div>
+      <p style={{ color:theme.text, fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:16, fontWeight:700, margin:"0 0 8px" }}>{title}</p>
+      <p style={{ color:theme.textMuted, fontFamily:"Inter, sans-serif", fontSize:13, margin:"0 0 20px", lineHeight:1.6, maxWidth:240 }}>{subtitle}</p>
+      {actionLabel && onAction && (
+        <button onClick={onAction} style={{ background:theme.accent, color:"#fff", border:"none", borderRadius:10, padding:"11px 22px", fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:13, fontWeight:700, cursor:"pointer" }}>
+          {actionLabel}
+        </button>
+      )}
+    </div>
+  );
+}
+
+// Skeleton card — for loading states (step 2)
+function SkeletonCard() {
+  return (
+    <div style={{ background:theme.surface, borderRadius:14, padding:"14px", marginBottom:10, border:`1px solid ${theme.border}` }}>
+      <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:12 }}>
+        <div style={{ width:28, height:28, borderRadius:"50%", background:theme.border, animation:"shimmer 1.4s infinite" }}/>
+        <div style={{ flex:1 }}>
+          <div style={{ height:10, width:"40%", background:theme.border, borderRadius:4, marginBottom:5, animation:"shimmer 1.4s infinite" }}/>
+          <div style={{ height:8, width:"25%", background:theme.border, borderRadius:4, animation:"shimmer 1.4s infinite" }}/>
+        </div>
+      </div>
+      <div style={{ height:12, width:"90%", background:theme.border, borderRadius:4, marginBottom:8, animation:"shimmer 1.4s infinite" }}/>
+      <div style={{ height:12, width:"70%", background:theme.border, borderRadius:4, marginBottom:14, animation:"shimmer 1.4s infinite" }}/>
+      <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+        <div style={{ height:38, background:theme.border, borderRadius:9, animation:"shimmer 1.4s infinite" }}/>
+        <div style={{ height:38, background:theme.border, borderRadius:9, animation:"shimmer 1.4s infinite" }}/>
+      </div>
+    </div>
+  );
+}
+
 // ─── Discover ─────────────────────────────────────────────
 function DiscoverScreen({ onGoToCreate, onShowTrending }) {
   const [activeCat, setActiveCat] = useState("#Wszystkie");
   const [detailId,  setDetailId]  = useState(null);
-  const [detailAnim, setDetailAnim] = useState("closed"); // "closed"|"open"|"closing"
+  const [detailAnim, setDetailAnim] = useState("closed");
+  const [feedEmpty, setFeedEmpty]   = useState(false);  // demo toggle
 
   const openDetail = (id) => {
     setDetailId(id);
@@ -760,7 +805,23 @@ function DiscoverScreen({ onGoToCreate, onShowTrending }) {
           ))}
         </div>
         <div style={{ padding:"12px 12px 0" }}>
-          {communityPolls.map(poll => <PollCard key={poll.id} poll={poll}/>)}
+          {/* Demo toggle — empty state */}
+          <button onClick={()=>setFeedEmpty(e=>!e)} style={{ background:"none", border:`1px dashed ${theme.border}`, borderRadius:8, padding:"5px 12px", color:theme.textDim, fontFamily:"Inter, sans-serif", fontSize:10, cursor:"pointer", marginBottom:8 }}>
+            {feedEmpty ? "▶ Pokaż sondy" : "○ Demo: pusty feed"}
+          </button>
+          {feedEmpty ? (
+            <EmptyState
+              icon={<BarChart2 size={28} color={theme.accent} strokeWidth={1.5}/>}
+              title="Brak sond w tej kategorii"
+              subtitle="Nikt jeszcze nie dodał sondy w tym temacie. Bądź pierwszy!"
+              actionLabel="Stwórz sondę"
+              onAction={onGoToCreate}
+            />
+          ) : (
+            <>
+              {communityPolls.map(poll => <PollCard key={poll.id} poll={poll}/>)}
+            </>
+          )}
           <div style={{ height:20 }}/>
         </div>
       </div>
@@ -1021,7 +1082,15 @@ function DiscussScreen({ onGoHome }) {
         </div>
 
         <div style={{ padding:"12px 12px 0" }}>
-          {threads.map(t => (
+          {activeTab === "Moje" ? (
+            <EmptyState
+              icon={<MessageCircle size={28} color={theme.accent} strokeWidth={1.5}/>}
+              title="Nie masz jeszcze dyskusji"
+              subtitle="Zagłosuj w sondzie i dodaj komentarz — Twoje wątki pojawią się tutaj."
+              actionLabel="Zaloguj się"
+              onAction={()=>{}}
+            />
+          ) : threads.map(t => (
             <div key={t.id} style={{ background:theme.surface, borderRadius:14, padding:"14px", marginBottom:10, border:`1px solid ${t.hot ? theme.redBorder : theme.border}`, cursor:"pointer" }}>
               <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
                 <Tag hot={t.hot}>{t.tag}</Tag>
@@ -1036,11 +1105,11 @@ function DiscussScreen({ onGoHome }) {
               </div>
             </div>
           ))}
-          <div style={{ background:theme.surface, borderRadius:14, padding:"20px", textAlign:"center", border:`1px dashed ${theme.border}` }}>
+          {activeTab !== "Moje" && <div style={{ background:theme.surface, borderRadius:14, padding:"20px", textAlign:"center", border:`1px dashed ${theme.border}` }}>
             <MessageCircle size={28} color={theme.textDim} strokeWidth={1.5}/>
             <p style={{ color:theme.textMuted, fontFamily:"Inter, sans-serif", fontSize:13, margin:"10px 0 14px", lineHeight:1.5 }}>Zaloguj się, aby komentować sondy i brać udział w dyskusjach.</p>
             <button style={{ background:theme.accent, color:"#fff", border:"none", borderRadius:10, padding:"10px 20px", fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:13, fontWeight:700, cursor:"pointer" }}>Zaloguj się →</button>
-          </div>
+          </div>}
           <div style={{ height:20 }}/>
         </div>
       </div>
@@ -1206,6 +1275,7 @@ export default function SondalApp() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=Inter:wght@400;500;600&display=swap');
         @keyframes pulsered { 0%{box-shadow:0 0 0 0 rgba(232,55,61,0.7)} 70%{box-shadow:0 0 0 6px rgba(232,55,61,0)} 100%{box-shadow:0 0 0 0 rgba(232,55,61,0)} }
+        @keyframes shimmer { 0%{opacity:1} 50%{opacity:0.4} 100%{opacity:1} }
         * { box-sizing:border-box; margin:0; padding:0; }
         html, body, #root { height:100%; }
         textarea:focus, input:focus { border-color:#3B7DD8 !important; }
