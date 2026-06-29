@@ -105,6 +105,15 @@ const communityPolls = [
   { id:22, user:"@zuzanna.k", avatar:"Z", time:"1 godz. temu", tag:"#rozrywka",
     question:"Który serwis streamingowy jest według Ciebie najlepszy w 2025?",
     options:["Netflix","Max (HBO)","Disney+","Polsat Box Go"], baseSplit:[44,29,15,12], totalVotes:8934 },
+  { id:23, user:"@tomek_biker", avatar:"T", time:"3 godz. temu", tag:"#miasto",
+    question:"Czy w Twoim mieście brakuje bezpiecznych dróg rowerowych?",
+    options:["Tak, to dramat","Jest ok, mogłoby być lepiej","Nie, mamy dobrą infrastrukturę"], baseSplit:[58,29,13], totalVotes:3871 },
+  { id:24, user:"@kasia_edu", avatar:"K", time:"4 godz. temu", tag:"#edukacja",
+    question:"Czy zadania domowe w szkole podstawowej powinny być zakazane?",
+    options:["Tak, dzieci potrzebują odpoczynku","Nie, to ważny element nauki","Tylko w ograniczonym zakresie"], baseSplit:[41,32,27], totalVotes:5203 },
+  { id:25, user:"@piotr_fin", avatar:"P", time:"6 godz. temu", tag:"#finanse",
+    question:"Czy trzymasz oszczędności w złotówkach, euro czy kryptowalutach?",
+    options:["Złotówki (PLN)","Euro lub inne waluty","Kryptowaluty","Mieszam kilka opcji"], baseSplit:[38,27,14,21], totalVotes:6614 },
 ];
 
 const officialStats = [
@@ -235,7 +244,7 @@ function NowBadge() {
   );
 }
 
-function StickyHeader({ nowActive, onShowTrending }) {
+function StickyHeader({ nowActive, onShowTrending, onGoHome }) {
   const [hidden, setHidden] = useState(false);
   const lastScrollY  = useRef(0);
   const headerHeight = 64;
@@ -264,8 +273,8 @@ function StickyHeader({ nowActive, onShowTrending }) {
       transform: hidden ? "translateY(-100%)" : "translateY(0)",
       transition:"transform 0.32s cubic-bezier(.4,0,.2,1)",
     }}>
-      {/* Logo — left */}
-      <div style={{ display:"flex", alignItems:"center", gap:8, flex:1 }}>
+      {/* Logo — left, clickable to home */}
+      <div onClick={onGoHome} style={{ display:"flex", alignItems:"center", gap:8, flex:1, cursor: onGoHome ? "pointer" : "default" }}>
         <LogoMark size={28}/>
         <div>
           <div style={{ display:"flex", alignItems:"baseline", gap:2 }}>
@@ -470,8 +479,8 @@ function SondaDetail({ poll, onClose }) {
 
       {/* Header — logo left, share + back right */}
       <div style={{ height:64, padding:"0 16px", borderBottom:`1px solid ${theme.border}`, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0, background:`${theme.bg}F4`, backdropFilter:"blur(14px)" }}>
-        {/* Logo */}
-        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+        {/* Logo — click to close */}
+        <div onClick={onClose} style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer" }}>
           <LogoMark size={28}/>
           <div>
             <div style={{ display:"flex", alignItems:"baseline", gap:2 }}>
@@ -739,7 +748,7 @@ function DiscoverScreen({ onGoToCreate, onShowTrending }) {
 
   return (
     <div style={{ flex:1, display:"flex", flexDirection:"column", position:"relative", overflow:"hidden" }}>
-      <StickyHeader nowActive={true} onCreateClick={onGoToCreate} onShowTrending={onShowTrending}/>
+      <StickyHeader nowActive={true} onCreateClick={onGoToCreate} onShowTrending={onShowTrending} onGoHome={()=>{ setShowTrending(false); setDetailId(null); }}/>
       <div data-scroll-feed style={{ flex:1, overflowY:"auto", position:"relative", paddingTop:64 }}>
         <TickerBar/>
         <HeroSlider onCreateClick={onGoToCreate}/>
@@ -930,11 +939,11 @@ function SuccessScreen({ pollData, onReset, onGoToDiscover }) {
 }
 
 // ─── Trending Now Full Screen ─────────────────────────────
-function TrendingNowScreen({ onBack, onPollOpen }) {
+function TrendingNowScreen({ onBack, onPollOpen, onNavChange, activeNav }) {
   return (
     <div style={{ flex:1, display:"flex", flexDirection:"column", background:theme.bg }}>
       <div style={{ height:64, padding:"0 16px", borderBottom:`1px solid ${theme.border}`, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0, background:`${theme.bg}F4`, backdropFilter:"blur(14px)" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+        <div onClick={onBack} style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer" }}>
           <LogoMark size={28}/>
           <div>
             <div style={{ display:"flex", alignItems:"baseline", gap:2 }}>
@@ -977,6 +986,7 @@ function TrendingNowScreen({ onBack, onPollOpen }) {
         ))}
         <div style={{ height:20 }}/>
       </div>
+      <BottomNav active={activeNav || "discover"} setActive={onNavChange || (()=>{})}/>
     </div>
   );
 }
@@ -1211,7 +1221,7 @@ export default function SondalApp() {
           {/* Trending NOW full screen — triggered by NOW! badge or section title */}
           {showTrending && (
             <div style={{ position:"absolute", inset:0, zIndex:200, background:theme.bg }}>
-              <TrendingNowScreen onBack={()=>setShowTrending(false)} onPollOpen={openTrendingDetail}/>
+              <TrendingNowScreen onBack={()=>setShowTrending(false)} onPollOpen={openTrendingDetail} onNavChange={handleNavChange} activeNav={activeNav}/>
             </div>
           )}
 
