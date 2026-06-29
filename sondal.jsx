@@ -986,27 +986,32 @@ function TrendingNowScreen({ onBack, onPollOpen, onNavChange, activeNav }) {
         ))}
         <div style={{ height:20 }}/>
       </div>
-      <BottomNav active={activeNav || "discover"} setActive={onNavChange || (()=>{})}/>
     </div>
   );
 }
 
 // ─── Discuss Screen ────────────────────────────────────────
-function DiscussScreen() {
+function DiscussScreen({ onGoHome }) {
   const tabs = ["Gorące", "Najnowsze", "Moje"];
   const [activeTab, setActiveTab] = useState("Gorące");
   const threads = [
-    { id:1, tag:"#polityka", title:"4-dniowy tydzień pracy — za czy przeciw?", comments:128, votes:9102, hot:true, time:"2 godz. temu" },
-    { id:2, tag:"#warszawa", title:"Rondo przy Dworcu — piesi vs kierowcy. Kto ma rację?", comments:64, votes:2341, hot:true, time:"3 godz. temu" },
-    { id:3, tag:"#technologia", title:"AI w miejscu pracy — strach czy szansa?", comments:87, votes:6780, hot:false, time:"5 godz. temu" },
-    { id:4, tag:"#gospodarka", title:"Ceny mieszkań — kiedy pęknie bańka?", comments:203, votes:4102, hot:false, time:"8 godz. temu" },
-    { id:5, tag:"#geopolityka", title:"Ormuz — czy grozi nam kryzys paliwowy?", comments:44, votes:9310, hot:true, time:"1 godz. temu" },
+    { id:1,  tag:"#polityka",    title:"4-dniowy tydzień pracy — za czy przeciw?",                    comments:128, votes:9102,  hot:true,  time:"2 godz. temu" },
+    { id:2,  tag:"#warszawa",    title:"Rondo przy Dworcu — piesi vs kierowcy. Kto ma rację?",        comments:64,  votes:2341,  hot:true,  time:"3 godz. temu" },
+    { id:3,  tag:"#geopolityka", title:"Ormuz — czy grozi nam kryzys paliwowy?",                      comments:44,  votes:9310,  hot:true,  time:"1 godz. temu" },
+    { id:4,  tag:"#technologia", title:"AI w miejscu pracy — strach czy szansa?",                     comments:87,  votes:6780,  hot:false, time:"5 godz. temu" },
+    { id:5,  tag:"#gospodarka",  title:"Ceny mieszkań — kiedy pęknie bańka?",                         comments:203, votes:4102,  hot:false, time:"8 godz. temu" },
+    { id:6,  tag:"#edukacja",    title:"Zadania domowe w podstawówce — za czy przeciw?",              comments:91,  votes:5203,  hot:false, time:"6 godz. temu" },
+    { id:7,  tag:"#finanse",     title:"Oszczędności — złotówki, euro czy krypto?",                   comments:156, votes:6614,  hot:false, time:"7 godz. temu" },
+    { id:8,  tag:"#miasto",      title:"Drogi rowerowe w Twoim mieście — wystarczające?",             comments:38,  votes:3871,  hot:false, time:"9 godz. temu" },
+    { id:9,  tag:"#polityka",    title:"Ordery dla ukraińskich żołnierzy — gest solidarności?",       comments:312, votes:12840, hot:true,  time:"dziś" },
+    { id:10, tag:"#gospodarka",  title:"Inflacja spada, ale Polacy tego nie czują — dlaczego?",       comments:178, votes:3917,  hot:false, time:"wczoraj" },
+    { id:11, tag:"#technologia", title:"OpenAI wyceniony na 300 mld — bańka czy nowa infrastruktura?",comments:267, votes:7654,  hot:false, time:"wczoraj" },
   ];
 
   return (
-    <div style={{ flex:1, display:"flex", flexDirection:"column" }}>
-      <StickyHeader nowActive={false}/>
-      <div style={{ flex:1, overflowY:"auto", paddingTop:64 }}>
+    <div style={{ flex:1, display:"flex", flexDirection:"column", minHeight:0, overflow:"hidden" }}>
+      <StickyHeader nowActive={false} onGoHome={onGoHome}/>
+      <div style={{ flex:1, overflowY:"auto", paddingTop:64, WebkitOverflowScrolling:"touch", minHeight:0 }}>
 
         {/* Tabs */}
         <div style={{ display:"flex", borderBottom:`1px solid ${theme.border}`, padding:"0 16px" }}>
@@ -1044,11 +1049,11 @@ function DiscussScreen() {
 }
 
 // ─── Login Screen ──────────────────────────────────────────
-function LoginScreen() {
+function LoginScreen({ onGoHome }) {
   const [mode, setMode] = useState("login"); // "login"|"register"
   return (
     <div style={{ flex:1, display:"flex", flexDirection:"column" }}>
-      <StickyHeader nowActive={false}/>
+      <StickyHeader nowActive={false} onGoHome={onGoHome}/>
       <div style={{ flex:1, overflowY:"auto", paddingTop:64, padding:"80px 24px 24px" }}>
 
         {/* Logo mark centered */}
@@ -1215,8 +1220,8 @@ export default function SondalApp() {
           overflow:"hidden",
         }}>
           {activeNav==="discover" && <DiscoverScreen onGoToCreate={openCreator} onShowTrending={()=>setShowTrending(true)}/>}
-          {activeNav==="discuss" && <DiscussScreen/>}
-          {activeNav==="account" && <LoginScreen/>}
+          {activeNav==="discuss" && <DiscussScreen onGoHome={()=>{setActiveNav("discover"); setShowTrending(false);}}/>}
+          {activeNav==="account" && <LoginScreen onGoHome={()=>{setActiveNav("discover"); setShowTrending(false);}}/>}
 
           {/* Trending NOW full screen — triggered by NOW! badge or section title */}
           {showTrending && (
