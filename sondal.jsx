@@ -235,7 +235,7 @@ function NowBadge() {
   );
 }
 
-function StickyHeader({ nowActive }) {
+function StickyHeader({ nowActive, onShowTrending }) {
   const [hidden, setHidden] = useState(false);
   const lastScrollY  = useRef(0);
   const headerHeight = 64;
@@ -281,7 +281,7 @@ function StickyHeader({ nowActive }) {
         <button style={{ background:"none", border:"none", cursor:"pointer", display:"flex", alignItems:"center", padding:6 }}>
           <Search size={18} color={theme.textMuted} strokeWidth={1.8}/>
         </button>
-        {nowActive && <NowBadge/>}
+        {nowActive && <div onClick={onShowTrending} style={{ cursor:"pointer" }}><NowBadge/></div>}
       </div>
     </div>
   );
@@ -466,26 +466,40 @@ function SondaDetail({ poll, onClose }) {
   );
 
   return (
-    <div style={{ position:"absolute", inset:0, zIndex:300, background:theme.bg, display:"flex", flexDirection:"column" }}>
+    <div style={{ position:"absolute", inset:0, background:theme.bg, display:"flex", flexDirection:"column" }}>
 
-      {/* Header */}
+      {/* Header — logo left, share + back right */}
       <div style={{ height:64, padding:"0 16px", borderBottom:`1px solid ${theme.border}`, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0, background:`${theme.bg}F4`, backdropFilter:"blur(14px)" }}>
-        <button onClick={onClose} style={{ background:"none", border:"none", cursor:"pointer", padding:8, display:"flex", alignItems:"center", gap:6, color:theme.textMuted }}>
-          <ChevronRight size={20} strokeWidth={2} color={theme.textMuted} style={{ transform:"rotate(180deg)" }}/>
-          <span style={{ fontFamily:"Inter, sans-serif", fontSize:13 }}>Wróć</span>
-        </button>
-        <div style={{ display:"flex", gap:6, alignItems:"center" }}>
-          <Tag>{poll.tag}</Tag>
+        {/* Logo */}
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          <LogoMark size={28}/>
+          <div>
+            <div style={{ display:"flex", alignItems:"baseline", gap:2 }}>
+              <span style={{ fontFamily:"'Plus Jakarta Sans', sans-serif", fontWeight:800, fontSize:18, color:theme.text, letterSpacing:"-0.5px" }}>sondal</span>
+              <span style={{ fontFamily:"Inter, sans-serif", fontWeight:500, fontSize:12, color:theme.accent }}>.top</span>
+            </div>
+            <p style={{ color:theme.textDim, fontFamily:"Inter, sans-serif", fontSize:8, margin:0, letterSpacing:"0.06em", textTransform:"uppercase" }}>Sonda to argument.</p>
+          </div>
         </div>
-        <button style={{ background:"none", border:"none", cursor:"pointer", padding:8, display:"flex", alignItems:"center" }}>
-          <Share2 size={18} color={theme.textMuted} strokeWidth={1.8}/>
-        </button>
+        {/* Right — share + back */}
+        <div style={{ display:"flex", alignItems:"center", gap:4 }}>
+          <button style={{ background:"none", border:"none", cursor:"pointer", padding:8, display:"flex", alignItems:"center" }}>
+            <Share2 size={18} color={theme.textMuted} strokeWidth={1.8}/>
+          </button>
+          <button onClick={onClose} style={{ background:"none", border:"none", cursor:"pointer", padding:8, display:"flex", alignItems:"center" }}>
+            <ChevronRight size={22} strokeWidth={2} color={theme.textMuted}/>
+          </button>
+        </div>
       </div>
 
       <div style={{ flex:1, overflowY:"auto" }}>
 
         {/* Poll card */}
-        <div style={{ padding:"18px 16px", borderBottom:`1px solid ${theme.border}` }}>
+        <div style={{ padding:"14px 16px 18px", borderBottom:`1px solid ${theme.border}` }}>
+          {/* Tag row — below header */}
+          <div style={{ marginBottom:12 }}>
+            <Tag>{poll.tag}</Tag>
+          </div>
           <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:12 }}>
             <div style={{ width:28, height:28, borderRadius:"50%", background:theme.indigo, border:`1px solid ${theme.borderAccent}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, color:theme.accent, fontWeight:700, flexShrink:0 }}>{poll.avatar}</div>
             <div>
@@ -583,13 +597,14 @@ function SondaDetail({ poll, onClose }) {
 }
 
 // ─── Trending ─────────────────────────────────────────────
-function TrendingSection({ onPollOpen }) {
+function TrendingSection({ onPollOpen, onShowAll }) {
   return (
     <div style={{ padding:"14px 16px", borderBottom:`1px solid ${theme.border}` }}>
-      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
+      <div onClick={onShowAll} style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10, cursor:"pointer" }}>
         <div style={{ width:3, height:12, background:theme.red, borderRadius:2 }}/>
         <span style={{ color:theme.textMuted, fontFamily:"Inter, sans-serif", fontSize:10, fontWeight:600, letterSpacing:"0.08em", textTransform:"uppercase" }}>Trending NOW</span>
         <span style={{ width:6, height:6, borderRadius:"50%", background:theme.red, display:"inline-block", animation:"pulsered 1.8s infinite" }}/>
+        <ChevronRight size={12} color={theme.textDim} strokeWidth={2} style={{ marginLeft:"auto" }}/>
       </div>
       <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
         {trendingPolls.map((p,i) => (
@@ -707,14 +722,15 @@ function TickerBar() {
 }
 
 // ─── Discover ─────────────────────────────────────────────
-function DiscoverScreen({ onGoToCreate }) {
+function DiscoverScreen({ onGoToCreate, onShowTrending }) {
   const [activeCat, setActiveCat] = useState("#Wszystkie");
   const [detailId,  setDetailId]  = useState(null);
   const [detailAnim, setDetailAnim] = useState("closed"); // "closed"|"open"|"closing"
 
   const openDetail = (id) => {
     setDetailId(id);
-    setDetailAnim("open");
+    setDetailAnim("entering"); // start off-screen
+    setTimeout(() => setDetailAnim("open"), 20); // trigger transition
   };
   const closeDetail = () => {
     setDetailAnim("closing");
@@ -723,12 +739,12 @@ function DiscoverScreen({ onGoToCreate }) {
 
   return (
     <div style={{ flex:1, display:"flex", flexDirection:"column", position:"relative", overflow:"hidden" }}>
-      <StickyHeader nowActive={true} onCreateClick={onGoToCreate}/>
+      <StickyHeader nowActive={true} onCreateClick={onGoToCreate} onShowTrending={onShowTrending}/>
       <div data-scroll-feed style={{ flex:1, overflowY:"auto", position:"relative", paddingTop:64 }}>
         <TickerBar/>
         <HeroSlider onCreateClick={onGoToCreate}/>
         <StatsBar/>
-        <TrendingSection onPollOpen={openDetail}/>
+        <TrendingSection onPollOpen={openDetail} onShowAll={onShowTrending}/>
         <div style={{ display:"flex", gap:7, padding:"10px 16px", overflowX:"auto", scrollbarWidth:"none", borderBottom:`1px solid ${theme.border}` }}>
           {categories.map(cat => (
             <button key={cat} onClick={()=>setActiveCat(cat)} style={{ background: activeCat===cat?theme.accent:theme.surface, color: activeCat===cat?"#fff":theme.textMuted, border:`1px solid ${activeCat===cat?"transparent":theme.border}`, borderRadius:20, padding:"6px 13px", fontSize:11, fontFamily:"Inter, sans-serif", fontWeight: activeCat===cat?700:400, cursor:"pointer", whiteSpace:"nowrap", transition:"all 0.15s" }}>{cat}</button>
@@ -744,10 +760,10 @@ function DiscoverScreen({ onGoToCreate }) {
       {detailId !== null && trendingPollDetails[detailId] && (
         <div style={{
           position:"absolute", inset:0, zIndex:300,
-          transform: detailAnim==="open" ? "translateX(0)" : "translateX(100%)",
-          transition: detailAnim==="closing"
-            ? "transform 0.34s cubic-bezier(.4,0,.2,1)"
-            : "transform 0.38s cubic-bezier(.22,.68,0,1.1)",
+          transform: (detailAnim==="open") ? "translateX(0)" : "translateX(100%)",
+          transition: (detailAnim==="open" || detailAnim==="closing")
+            ? "transform 0.38s cubic-bezier(.22,.68,0,1.1)"
+            : "none",
         }}>
           <SondaDetail poll={trendingPollDetails[detailId]} onClose={closeDetail}/>
         </div>
@@ -913,6 +929,196 @@ function SuccessScreen({ pollData, onReset, onGoToDiscover }) {
   );
 }
 
+// ─── Trending Now Full Screen ─────────────────────────────
+function TrendingNowScreen({ onBack, onPollOpen }) {
+  return (
+    <div style={{ flex:1, display:"flex", flexDirection:"column", background:theme.bg }}>
+      <div style={{ height:64, padding:"0 16px", borderBottom:`1px solid ${theme.border}`, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0, background:`${theme.bg}F4`, backdropFilter:"blur(14px)" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          <LogoMark size={28}/>
+          <div>
+            <div style={{ display:"flex", alignItems:"baseline", gap:2 }}>
+              <span style={{ fontFamily:"'Plus Jakarta Sans', sans-serif", fontWeight:800, fontSize:18, color:theme.text, letterSpacing:"-0.5px" }}>sondal</span>
+              <span style={{ fontFamily:"Inter, sans-serif", fontWeight:500, fontSize:12, color:theme.accent }}>.top</span>
+            </div>
+            <p style={{ color:theme.textDim, fontFamily:"Inter, sans-serif", fontSize:8, margin:0, letterSpacing:"0.06em", textTransform:"uppercase" }}>Sonda to argument.</p>
+          </div>
+        </div>
+        <button onClick={onBack} style={{ background:"none", border:"none", cursor:"pointer", padding:8 }}>
+          <ChevronRight size={22} strokeWidth={2} color={theme.textMuted}/>
+        </button>
+      </div>
+
+      <div style={{ flex:1, overflowY:"auto", padding:"16px 16px 0" }}>
+        {/* Header */}
+        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:16 }}>
+          <div style={{ width:3, height:16, background:theme.red, borderRadius:2 }}/>
+          <h2 style={{ fontFamily:"'Plus Jakarta Sans', sans-serif", fontWeight:800, fontSize:20, color:theme.text, margin:0 }}>Trending NOW</h2>
+          <span style={{ width:7, height:7, borderRadius:"50%", background:theme.red, display:"inline-block", animation:"pulsered 1.8s infinite" }}/>
+        </div>
+
+        {/* All trending polls expanded */}
+        {[...trendingPolls, ...trendingPolls.map(p => ({ ...p, id:p.id+100, question:"Czy wprowadzenie opłat za wjazd do centrum miast poprawi jakość powietrza?", votes: 3210 }))].map((p,i) => (
+          <div key={p.id} onClick={() => onPollOpen && onPollOpen(Math.min(p.id, 12))}
+            style={{ background:theme.surface, borderRadius:14, padding:"14px", marginBottom:10, border:`1px solid ${theme.border}`, cursor:"pointer", display:"flex", gap:12, alignItems:"center" }}
+            onMouseEnter={e=>e.currentTarget.style.borderColor=theme.borderAccent}
+            onMouseLeave={e=>e.currentTarget.style.borderColor=theme.border}>
+            <span style={{ color: i < 3 ? theme.accent : theme.textDim, fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:22, fontWeight:800, width:28, textAlign:"center", flexShrink:0 }}>{i+1}</span>
+            <div style={{ flex:1 }}>
+              <Tag>{p.tag}</Tag>
+              <p style={{ color:theme.text, fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:14, fontWeight:600, margin:"6px 0 4px", lineHeight:1.4 }}>{p.question}</p>
+              <div style={{ display:"flex", gap:12, alignItems:"center" }}>
+                <span style={{ color:theme.textDim, fontFamily:"Inter, sans-serif", fontSize:11 }}>{p.votes.toLocaleString()} głosów</span>
+                {i < 3 && <span style={{ color:theme.red, fontFamily:"Inter, sans-serif", fontSize:10, fontWeight:700 }}>🔴 HOT</span>}
+              </div>
+            </div>
+            <ChevronRight size={18} color={theme.accent} strokeWidth={1.8}/>
+          </div>
+        ))}
+        <div style={{ height:20 }}/>
+      </div>
+    </div>
+  );
+}
+
+// ─── Discuss Screen ────────────────────────────────────────
+function DiscussScreen() {
+  const tabs = ["Gorące", "Najnowsze", "Moje"];
+  const [activeTab, setActiveTab] = useState("Gorące");
+  const threads = [
+    { id:1, tag:"#polityka", title:"4-dniowy tydzień pracy — za czy przeciw?", comments:128, votes:9102, hot:true, time:"2 godz. temu" },
+    { id:2, tag:"#warszawa", title:"Rondo przy Dworcu — piesi vs kierowcy. Kto ma rację?", comments:64, votes:2341, hot:true, time:"3 godz. temu" },
+    { id:3, tag:"#technologia", title:"AI w miejscu pracy — strach czy szansa?", comments:87, votes:6780, hot:false, time:"5 godz. temu" },
+    { id:4, tag:"#gospodarka", title:"Ceny mieszkań — kiedy pęknie bańka?", comments:203, votes:4102, hot:false, time:"8 godz. temu" },
+    { id:5, tag:"#geopolityka", title:"Ormuz — czy grozi nam kryzys paliwowy?", comments:44, votes:9310, hot:true, time:"1 godz. temu" },
+  ];
+
+  return (
+    <div style={{ flex:1, display:"flex", flexDirection:"column" }}>
+      <StickyHeader nowActive={false}/>
+      <div style={{ flex:1, overflowY:"auto", paddingTop:64 }}>
+
+        {/* Tabs */}
+        <div style={{ display:"flex", borderBottom:`1px solid ${theme.border}`, padding:"0 16px" }}>
+          {tabs.map(tab => (
+            <button key={tab} onClick={()=>setActiveTab(tab)} style={{ background:"none", border:"none", borderBottom: activeTab===tab ? `2px solid ${theme.accent}` : "2px solid transparent", padding:"12px 16px", color: activeTab===tab ? theme.accent : theme.textMuted, fontFamily:"Inter, sans-serif", fontSize:13, fontWeight: activeTab===tab ? 600 : 400, cursor:"pointer", transition:"all 0.15s" }}>{tab}</button>
+          ))}
+        </div>
+
+        <div style={{ padding:"12px 12px 0" }}>
+          {threads.map(t => (
+            <div key={t.id} style={{ background:theme.surface, borderRadius:14, padding:"14px", marginBottom:10, border:`1px solid ${t.hot ? theme.redBorder : theme.border}`, cursor:"pointer" }}>
+              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
+                <Tag hot={t.hot}>{t.tag}</Tag>
+                <span style={{ color:theme.textDim, fontFamily:"Inter, sans-serif", fontSize:11 }}>{t.time}</span>
+              </div>
+              <p style={{ color:theme.text, fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:15, fontWeight:600, lineHeight:1.4, margin:"0 0 10px" }}>{t.title}</p>
+              <div style={{ display:"flex", gap:16, alignItems:"center" }}>
+                <span style={{ color:theme.textDim, fontSize:12, fontFamily:"Inter, sans-serif", display:"flex", alignItems:"center", gap:4 }}>
+                  <MessageCircle size={13} strokeWidth={1.8}/> {t.comments}
+                </span>
+                <span style={{ color:theme.textDim, fontSize:12, fontFamily:"Inter, sans-serif" }}>{t.votes.toLocaleString()} głosów</span>
+              </div>
+            </div>
+          ))}
+          <div style={{ background:theme.surface, borderRadius:14, padding:"20px", textAlign:"center", border:`1px dashed ${theme.border}` }}>
+            <MessageCircle size={28} color={theme.textDim} strokeWidth={1.5}/>
+            <p style={{ color:theme.textMuted, fontFamily:"Inter, sans-serif", fontSize:13, margin:"10px 0 14px", lineHeight:1.5 }}>Zaloguj się, aby komentować sondy i brać udział w dyskusjach.</p>
+            <button style={{ background:theme.accent, color:"#fff", border:"none", borderRadius:10, padding:"10px 20px", fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:13, fontWeight:700, cursor:"pointer" }}>Zaloguj się →</button>
+          </div>
+          <div style={{ height:20 }}/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Login Screen ──────────────────────────────────────────
+function LoginScreen() {
+  const [mode, setMode] = useState("login"); // "login"|"register"
+  return (
+    <div style={{ flex:1, display:"flex", flexDirection:"column" }}>
+      <StickyHeader nowActive={false}/>
+      <div style={{ flex:1, overflowY:"auto", paddingTop:64, padding:"80px 24px 24px" }}>
+
+        {/* Logo mark centered */}
+        <div style={{ textAlign:"center", marginBottom:32 }}>
+          <div style={{ display:"inline-flex", alignItems:"center", justifyContent:"center", width:64, height:64, borderRadius:20, background:theme.accentDim, border:`1px solid ${theme.borderAccent}`, marginBottom:16 }}>
+            <LogoMark size={44}/>
+          </div>
+          <h2 style={{ fontFamily:"'Plus Jakarta Sans', sans-serif", fontWeight:800, fontSize:22, color:theme.text, margin:"0 0 6px" }}>
+            {mode==="login" ? "Witaj z powrotem" : "Dołącz do sondal.top"}
+          </h2>
+          <p style={{ color:theme.textMuted, fontFamily:"Inter, sans-serif", fontSize:14, margin:0 }}>
+            {mode==="login" ? "Zaloguj się do swojego konta" : "Sonda to argument. Zacznij teraz."}
+          </p>
+        </div>
+
+        {/* Tab switcher */}
+        <div style={{ display:"flex", background:theme.surface, borderRadius:12, padding:4, marginBottom:24 }}>
+          {["login","register"].map(m => (
+            <button key={m} onClick={()=>setMode(m)} style={{ flex:1, background: mode===m ? theme.accent : "none", border:"none", borderRadius:9, padding:"10px", fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:13, fontWeight:700, color: mode===m ? "#fff" : theme.textMuted, cursor:"pointer", transition:"all 0.2s" }}>
+              {m==="login" ? "Zaloguj się" : "Zarejestruj się"}
+            </button>
+          ))}
+        </div>
+
+        {/* Fields */}
+        <div style={{ display:"flex", flexDirection:"column", gap:12, marginBottom:16 }}>
+          {mode==="register" && (
+            <div>
+              <label style={{ color:theme.textMuted, fontFamily:"Inter, sans-serif", fontSize:10, fontWeight:600, letterSpacing:"0.06em", textTransform:"uppercase", display:"block", marginBottom:6 }}>Nazwa użytkownika</label>
+              <input placeholder="@twoja_nazwa" style={{ width:"100%", background:theme.surface, border:`1px solid ${theme.border}`, borderRadius:10, padding:"13px 14px", color:theme.text, fontFamily:"Inter, sans-serif", fontSize:14, outline:"none" }}/>
+            </div>
+          )}
+          <div>
+            <label style={{ color:theme.textMuted, fontFamily:"Inter, sans-serif", fontSize:10, fontWeight:600, letterSpacing:"0.06em", textTransform:"uppercase", display:"block", marginBottom:6 }}>Email</label>
+            <input type="email" placeholder="twoj@email.pl" style={{ width:"100%", background:theme.surface, border:`1px solid ${theme.border}`, borderRadius:10, padding:"13px 14px", color:theme.text, fontFamily:"Inter, sans-serif", fontSize:14, outline:"none" }}/>
+          </div>
+          <div>
+            <label style={{ color:theme.textMuted, fontFamily:"Inter, sans-serif", fontSize:10, fontWeight:600, letterSpacing:"0.06em", textTransform:"uppercase", display:"block", marginBottom:6 }}>Hasło</label>
+            <input type="password" placeholder="••••••••" style={{ width:"100%", background:theme.surface, border:`1px solid ${theme.border}`, borderRadius:10, padding:"13px 14px", color:theme.text, fontFamily:"Inter, sans-serif", fontSize:14, outline:"none" }}/>
+          </div>
+        </div>
+
+        {mode==="login" && (
+          <div style={{ textAlign:"right", marginBottom:20 }}>
+            <span style={{ color:theme.accent, fontFamily:"Inter, sans-serif", fontSize:13, cursor:"pointer" }}>Zapomniałem hasła</span>
+          </div>
+        )}
+
+        <button style={{ width:"100%", background:theme.accent, color:"#fff", border:"none", borderRadius:12, padding:"16px", fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:16, fontWeight:800, cursor:"pointer", marginBottom:20 }}>
+          {mode==="login" ? "Zaloguj się" : "Utwórz konto"} →
+        </button>
+
+        {/* Divider */}
+        <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:20 }}>
+          <div style={{ flex:1, height:1, background:theme.border }}/>
+          <span style={{ color:theme.textDim, fontFamily:"Inter, sans-serif", fontSize:12 }}>lub</span>
+          <div style={{ flex:1, height:1, background:theme.border }}/>
+        </div>
+
+        {/* Social login */}
+        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+          {["Google","Apple"].map(provider => (
+            <button key={provider} style={{ width:"100%", background:theme.surface, color:theme.text, border:`1px solid ${theme.border}`, borderRadius:12, padding:"14px", fontFamily:"Inter, sans-serif", fontSize:14, fontWeight:600, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:10 }}>
+              <span style={{ fontSize:18 }}>{provider==="Google"?"G":"🍎"}</span>
+              Kontynuuj z {provider}
+            </button>
+          ))}
+        </div>
+
+        <p style={{ color:theme.textDim, fontFamily:"Inter, sans-serif", fontSize:11, textAlign:"center", marginTop:24, lineHeight:1.6 }}>
+          Rejestrując się akceptujesz{" "}
+          <span style={{ color:theme.accent, cursor:"pointer" }}>Regulamin</span> i{" "}
+          <span style={{ color:theme.accent, cursor:"pointer" }}>Politykę prywatności</span>
+        </p>
+        <div style={{ height:20 }}/>
+      </div>
+    </div>
+  );
+}
+
 // ─── Bottom Nav ───────────────────────────────────────────
 function BottomNav({ active, setActive }) {
   const items = [
@@ -935,11 +1141,24 @@ function BottomNav({ active, setActive }) {
 
 // ─── Root ─────────────────────────────────────────────────
 export default function SondalApp() {
-  const [activeNav,   setActiveNav]   = useState("discover");
-  const [creatorStep, setCreatorStep] = useState("form");
-  const [pollData,    setPollData]    = useState(null);
-  const [creatorOpen, setCreatorOpen] = useState(false);   // sheet visibility
-  const [creatorAnim, setCreatorAnim] = useState("closed"); // "closed"|"opening"|"open"|"closing"
+  const [activeNav,    setActiveNav]    = useState("discover");
+  const [creatorStep,  setCreatorStep]  = useState("form");
+  const [pollData,     setPollData]     = useState(null);
+  const [creatorOpen,  setCreatorOpen]  = useState(false);
+  const [creatorAnim,  setCreatorAnim]  = useState("closed");
+  const [showTrending, setShowTrending] = useState(false);
+  const [trendingDetailId, setTrendingDetailId] = useState(null);
+  const [trendingDetailAnim, setTrendingDetailAnim] = useState("closed");
+
+  const openTrendingDetail = (id) => {
+    setTrendingDetailId(id);
+    setTrendingDetailAnim("entering");
+    setTimeout(() => setTrendingDetailAnim("open"), 20);
+  };
+  const closeTrendingDetail = () => {
+    setTrendingDetailAnim("closing");
+    setTimeout(() => { setTrendingDetailId(null); setTrendingDetailAnim("closed"); }, 360);
+  };
 
   // Open creator sheet from bottom
   const openCreator = () => {
@@ -985,23 +1204,26 @@ export default function SondalApp() {
         <div style={{ flex:1, minHeight:0, display:"flex", flexDirection:"column",
           overflow:"hidden",
         }}>
-          {activeNav==="discover" && <DiscoverScreen onGoToCreate={openCreator}/>}
-          {activeNav==="discuss" && (
-            <><StickyHeader nowActive={false}/>
-            <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:12, padding:32 }}>
-              <MessageCircle size={40} color={theme.textMuted} strokeWidth={1.5}/>
-              <p style={{ color:theme.textMuted, fontFamily:"Inter, sans-serif", fontSize:15, textAlign:"center" }}>Dyskusje — wkrótce dla zalogowanych.</p>
-            </div></>
+          {activeNav==="discover" && <DiscoverScreen onGoToCreate={openCreator} onShowTrending={()=>setShowTrending(true)}/>}
+          {activeNav==="discuss" && <DiscussScreen/>}
+          {activeNav==="account" && <LoginScreen/>}
+
+          {/* Trending NOW full screen — triggered by NOW! badge or section title */}
+          {showTrending && (
+            <div style={{ position:"absolute", inset:0, zIndex:200, background:theme.bg }}>
+              <TrendingNowScreen onBack={()=>setShowTrending(false)} onPollOpen={openTrendingDetail}/>
+            </div>
           )}
-          {activeNav==="account" && (
-            <><StickyHeader nowActive={false}/>
-            <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:12, padding:32 }}>
-              <LogoMark size={48}/>
-              <p style={{ color:theme.text, fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:18, fontWeight:700, marginTop:8 }}>Dołącz do sondal.top</p>
-              <p style={{ color:theme.textMuted, fontFamily:"Inter, sans-serif", fontSize:14, textAlign:"center", lineHeight:1.6 }}>Śledź swoje sondy, komentuj i moderuj wyniki.</p>
-              <button style={{ background:theme.accent, color:"#fff", border:"none", borderRadius:12, padding:"14px 32px", fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:15, fontWeight:800, cursor:"pointer", marginTop:8 }}>Zarejestruj się →</button>
-              <button style={{ background:"none", border:`1px solid ${theme.border}`, borderRadius:12, padding:"13px 32px", fontFamily:"Inter, sans-serif", fontSize:15, color:theme.textMuted, cursor:"pointer" }}>Zaloguj się</button>
-            </div></>
+
+          {/* Trending detail over trending full screen */}
+          {trendingDetailId !== null && trendingPollDetails[trendingDetailId] && (
+            <div style={{
+              position:"absolute", inset:0, zIndex:250,
+              transform: trendingDetailAnim==="open" ? "translateX(0)" : "translateX(100%)",
+              transition: (trendingDetailAnim==="open" || trendingDetailAnim==="closing") ? "transform 0.38s cubic-bezier(.22,.68,0,1.1)" : "none",
+            }}>
+              <SondaDetail poll={trendingPollDetails[trendingDetailId]} onClose={closeTrendingDetail}/>
+            </div>
           )}
         </div>
 
