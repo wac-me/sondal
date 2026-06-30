@@ -1293,7 +1293,7 @@ export default function SondalApp() {
         </div>
 
         {/* ── Navbar — always visible, outside all overlays ── */}
-        {!showTrending && !creatorOpen && (
+        {!showTrending && !creatorOpen && activeNav!=="account" && (
           <BottomNav active={activeNav} setActive={handleNavChange}/>
         )}
 
