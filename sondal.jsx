@@ -1235,8 +1235,148 @@ function DiscussScreen({ onGoHome }) {
   );
 }
 
+// ─── Profile Screen — Moje sondy (po zalogowaniu) ──────────
+const myPolls = [
+  { id:1, question:"Czy popierasz budowę nowej linii metra w naszym mieście?", tag:"#lokalne", status:"active", votes:1842, comments:67, created:"3 dni temu", split:[58,42] },
+  { id:2, question:"Który dzień tygodnia jest najlepszy na zakupy spożywcze?", tag:"#styl-zycia", status:"active", votes:412, comments:12, created:"1 tydzień temu", split:[31,69] },
+  { id:3, question:"Czy Twoja firma wprowadziła pracę zdalną na stałe?", tag:"#praca", status:"ended", votes:3201, comments:184, created:"3 tygodnie temu", split:[47,53] },
+  { id:4, question:"Najlepsza pora roku na urlop w Polsce?", tag:"#podroze", status:"ended", votes:967, comments:34, created:"1 miesiąc temu", split:[72,28] },
+];
+
+const profileStats = [
+  { label:"Sondy", value:"4" },
+  { label:"Łącznie głosów", value:"6 422" },
+  { label:"Komentarze", value:"297" },
+];
+
+function ProfileScreen({ onGoHome, onLogout }) {
+  const [tab, setTab] = useState("polls"); // "polls"|"stats"
+  const [moderatingId, setModeratingId] = useState(null);
+
+  const user = { name:"Marta Kowalska", handle:"@marta_k", avatar:"M", joined:"Dołączyła w marcu 2025" };
+
+  return (
+    <div style={{ flex:1, display:"flex", flexDirection:"column", minHeight:0, overflow:"hidden" }}>
+      <StickyHeader nowActive={false} onGoHome={onGoHome}/>
+      <div style={{ flex:1, overflowY:"auto", paddingTop:64, WebkitOverflowScrolling:"touch", minHeight:0 }}>
+
+        {/* Profile header */}
+        <div style={{ padding:"24px 16px 16px", textAlign:"center", borderBottom:`1px solid ${theme.border}` }}>
+          <div style={{ width:72, height:72, borderRadius:"50%", background:theme.indigo, border:`2px solid ${theme.borderAccent}`, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 12px", fontSize:28, color:theme.accent, fontWeight:700, fontFamily:"'Plus Jakarta Sans', sans-serif" }}>
+            {user.avatar}
+          </div>
+          <h2 style={{ color:theme.text, fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:18, fontWeight:700, margin:"0 0 2px" }}>{user.name}</h2>
+          <p style={{ color:theme.textMuted, fontFamily:"Inter, sans-serif", fontSize:13, margin:"0 0 4px" }}>{user.handle}</p>
+          <p style={{ color:theme.textDim, fontFamily:"Inter, sans-serif", fontSize:11, margin:0 }}>{user.joined}</p>
+
+          {/* Stats row */}
+          <div style={{ display:"flex", justifyContent:"center", gap:24, marginTop:18 }}>
+            {profileStats.map((s,i) => (
+              <div key={i} style={{ textAlign:"center" }}>
+                <p style={{ color:theme.text, fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:18, fontWeight:800, margin:"0 0 2px" }}>{s.value}</p>
+                <p style={{ color:theme.textDim, fontFamily:"Inter, sans-serif", fontSize:10, margin:0, textTransform:"uppercase", letterSpacing:"0.05em" }}>{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div style={{ display:"flex", borderBottom:`1px solid ${theme.border}`, padding:"0 16px" }}>
+          {[{k:"polls",l:"Moje sondy"},{k:"stats",l:"Statystyki"}].map(t => (
+            <button key={t.k} onClick={()=>setTab(t.k)} style={{ background:"none", border:"none", borderBottom: tab===t.k ? `2px solid ${theme.accent}` : "2px solid transparent", padding:"12px 16px", color: tab===t.k ? theme.accent : theme.textMuted, fontFamily:"Inter, sans-serif", fontSize:13, fontWeight: tab===t.k ? 600 : 400, cursor:"pointer" }}>{t.l}</button>
+          ))}
+        </div>
+
+        {tab === "polls" && (
+          <div style={{ padding:"12px 12px 0" }}>
+            {myPolls.map(p => (
+              <div key={p.id} style={{ background:theme.surface, borderRadius:14, padding:"14px", marginBottom:10, border:`1px solid ${theme.border}` }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8 }}>
+                  <Tag>{p.tag}</Tag>
+                  <span style={{
+                    background: p.status==="active" ? theme.accentDim : theme.surfaceHigh,
+                    color: p.status==="active" ? theme.accentBright : theme.textDim,
+                    fontSize:9, fontWeight:700, padding:"3px 8px", borderRadius:4, fontFamily:"Inter, sans-serif", letterSpacing:"0.05em",
+                  }}>
+                    {p.status==="active" ? "● AKTYWNA" : "ZAKOŃCZONA"}
+                  </span>
+                </div>
+
+                <p style={{ color:theme.text, fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:14, fontWeight:600, lineHeight:1.4, margin:"0 0 10px" }}>{p.question}</p>
+
+                {/* Mini results bar */}
+                <div style={{ display:"flex", height:6, borderRadius:3, overflow:"hidden", marginBottom:8 }}>
+                  <div style={{ width:`${p.split[0]}%`, background:theme.accent }}/>
+                  <div style={{ width:`${p.split[1]}%`, background:theme.textDim }}/>
+                </div>
+
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                  <div style={{ display:"flex", gap:14 }}>
+                    <span style={{ color:theme.textDim, fontSize:11, fontFamily:"Inter, sans-serif" }}>{p.votes.toLocaleString()} głosów</span>
+                    <span style={{ color:theme.textDim, fontSize:11, fontFamily:"Inter, sans-serif", display:"flex", alignItems:"center", gap:4 }}>
+                      <MessageCircle size={11} strokeWidth={1.8}/> {p.comments}
+                    </span>
+                    <span style={{ color:theme.textDim, fontSize:11, fontFamily:"Inter, sans-serif" }}>{p.created}</span>
+                  </div>
+                  <button onClick={() => setModeratingId(moderatingId === p.id ? null : p.id)} style={{ background:"none", border:"none", color:theme.accent, fontFamily:"Inter, sans-serif", fontSize:11, fontWeight:600, cursor:"pointer" }}>
+                    Moderuj
+                  </button>
+                </div>
+
+                {/* Moderation panel — expands inline */}
+                {moderatingId === p.id && (
+                  <div style={{ marginTop:12, paddingTop:12, borderTop:`1px solid ${theme.border}`, display:"flex", flexDirection:"column", gap:8 }}>
+                    <button style={{ background:theme.surfaceHigh, border:`1px solid ${theme.border}`, borderRadius:8, padding:"9px 12px", color:theme.text, fontFamily:"Inter, sans-serif", fontSize:12, textAlign:"left", cursor:"pointer", display:"flex", alignItems:"center", gap:8 }}>
+                      <Eye size={14} color={theme.textMuted} strokeWidth={1.8}/> Zobacz szczegółowe statystyki
+                    </button>
+                    <button style={{ background:theme.surfaceHigh, border:`1px solid ${theme.border}`, borderRadius:8, padding:"9px 12px", color:theme.text, fontFamily:"Inter, sans-serif", fontSize:12, textAlign:"left", cursor:"pointer", display:"flex", alignItems:"center", gap:8 }}>
+                      <MessageCircle size={14} color={theme.textMuted} strokeWidth={1.8}/> Zarządzaj komentarzami
+                    </button>
+                    {p.status==="active" && (
+                      <button style={{ background:`${theme.red}12`, border:`1px solid ${theme.redBorder}`, borderRadius:8, padding:"9px 12px", color:theme.red, fontFamily:"Inter, sans-serif", fontSize:12, textAlign:"left", cursor:"pointer", fontWeight:600 }}>
+                        Zakończ głosowanie
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+            <div style={{ height:20 }}/>
+          </div>
+        )}
+
+        {tab === "stats" && (
+          <div style={{ padding:"16px 16px 0" }}>
+            <div style={{ background:theme.surface, border:`1px solid ${theme.border}`, borderRadius:14, padding:"16px", marginBottom:12 }}>
+              <p style={{ color:theme.textMuted, fontFamily:"Inter, sans-serif", fontSize:10, fontWeight:600, letterSpacing:"0.06em", textTransform:"uppercase", margin:"0 0 12px" }}>Aktywność w czasie</p>
+              <MiniBarChart data={[{label:"Sty",value:30},{label:"Lut",value:55},{label:"Mar",value:48},{label:"Kwi",value:72},{label:"Maj",value:90},{label:"Cze",value:100}]}/>
+            </div>
+            <div style={{ display:"flex", gap:10, marginBottom:12 }}>
+              <div style={{ flex:1, background:theme.surface, border:`1px solid ${theme.border}`, borderRadius:14, padding:"14px" }}>
+                <p style={{ color:theme.textDim, fontFamily:"Inter, sans-serif", fontSize:10, margin:"0 0 6px", textTransform:"uppercase" }}>Najlepsza sonda</p>
+                <p style={{ color:theme.text, fontFamily:"Inter, sans-serif", fontSize:12, lineHeight:1.4, margin:0 }}>Czy Twoja firma wprowadziła pracę zdalną na stałe?</p>
+                <p style={{ color:theme.accent, fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:16, fontWeight:800, margin:"6px 0 0" }}>3 201 głosów</p>
+              </div>
+            </div>
+            <div style={{ background:theme.surface, border:`1px solid ${theme.border}`, borderRadius:14, padding:"16px" }}>
+              <p style={{ color:theme.textMuted, fontFamily:"Inter, sans-serif", fontSize:10, fontWeight:600, letterSpacing:"0.06em", textTransform:"uppercase", margin:"0 0 10px" }}>Eksport danych</p>
+              <button style={{ width:"100%", background:theme.surfaceHigh, border:`1px solid ${theme.border}`, borderRadius:9, padding:"11px", color:theme.text, fontFamily:"Inter, sans-serif", fontSize:13, fontWeight:600, cursor:"pointer" }}>Pobierz wszystkie dane (CSV)</button>
+            </div>
+            <div style={{ height:20 }}/>
+          </div>
+        )}
+
+        {/* Logout */}
+        <div style={{ padding:"4px 16px 90px" }}>
+          <button onClick={onLogout} style={{ width:"100%", background:"none", border:`1px solid ${theme.border}`, borderRadius:10, padding:"12px", color:theme.textMuted, fontFamily:"Inter, sans-serif", fontSize:13, cursor:"pointer" }}>Wyloguj się</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Login Screen ──────────────────────────────────────────
-function LoginScreen({ onGoHome }) {
+function LoginScreen({ onGoHome, onLoggedIn }) {
   const [mode, setMode] = useState("login"); // "login"|"register"
   return (
     <div style={{ flex:1, display:"flex", flexDirection:"column", minHeight:0, overflow:"hidden" }}>
@@ -1289,7 +1429,7 @@ function LoginScreen({ onGoHome }) {
           </div>
         )}
 
-        <button style={{ width:"100%", background:theme.accent, color:"#fff", border:"none", borderRadius:12, padding:"16px", fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:16, fontWeight:800, cursor:"pointer", marginBottom:20 }}>
+        <button onClick={onLoggedIn} style={{ width:"100%", background:theme.accent, color:"#fff", border:"none", borderRadius:12, padding:"16px", fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:16, fontWeight:800, cursor:"pointer", marginBottom:20 }}>
           {mode==="login" ? "Zaloguj się" : "Utwórz konto"} →
         </button>
 
@@ -1302,7 +1442,7 @@ function LoginScreen({ onGoHome }) {
 
         {/* Social login */}
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          <button style={{ width:"100%", background:theme.surface, color:theme.text, border:`1px solid ${theme.border}`, borderRadius:12, padding:"14px", fontFamily:"Inter, sans-serif", fontSize:14, fontWeight:600, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:10 }}>
+          <button onClick={onLoggedIn} style={{ width:"100%", background:theme.surface, color:theme.text, border:`1px solid ${theme.border}`, borderRadius:12, padding:"14px", fontFamily:"Inter, sans-serif", fontSize:14, fontWeight:600, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:10 }}>
             <svg width="18" height="18" viewBox="0 0 18 18">
               <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.13-.84 2.08-1.8 2.72v2.26h2.91c1.7-1.57 2.69-3.88 2.69-6.62z"/>
               <path fill="#34A853" d="M9 18c2.43 0 4.47-.81 5.96-2.18l-2.91-2.26c-.81.54-1.84.86-3.05.86-2.35 0-4.34-1.59-5.05-3.72H.96v2.33C2.44 15.98 5.48 18 9 18z"/>
@@ -1311,7 +1451,7 @@ function LoginScreen({ onGoHome }) {
             </svg>
             Kontynuuj z Google
           </button>
-          <button style={{ width:"100%", background:theme.surface, color:theme.text, border:`1px solid ${theme.border}`, borderRadius:12, padding:"14px", fontFamily:"Inter, sans-serif", fontSize:14, fontWeight:600, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:10 }}>
+          <button onClick={onLoggedIn} style={{ width:"100%", background:theme.surface, color:theme.text, border:`1px solid ${theme.border}`, borderRadius:12, padding:"14px", fontFamily:"Inter, sans-serif", fontSize:14, fontWeight:600, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:10 }}>
             <svg width="16" height="18" viewBox="0 0 16 18" fill={theme.text}>
               <path d="M13.2 9.5c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.8-3.5.8-.7 0-1.8-.8-3-.8-1.5 0-3 .9-3.8 2.3-1.6 2.8-.4 7 1.2 9.3.8 1.1 1.7 2.4 2.9 2.4 1.2 0 1.6-.8 3-.8s1.8.8 3 .7c1.2 0 2-1.1 2.8-2.3.9-1.3 1.2-2.5 1.2-2.6-.1 0-2.4-.9-2.4-3.7zM10.9 2.6c.7-.8 1.1-1.9 1-3-1 .1-2.1.6-2.8 1.4-.6.7-1.1 1.8-1 2.9 1.1.1 2.1-.5 2.8-1.3z"/>
             </svg>
@@ -1359,6 +1499,7 @@ export default function SondalApp() {
   const [creatorAnim,  setCreatorAnim]  = useState("closed");
   const [showTrending, setShowTrending] = useState(false);
   const [showSharedPoll, setShowSharedPoll] = useState(false); // demo: sondal.top/x/abc
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [trendingDetailId, setTrendingDetailId] = useState(null);
   const [trendingDetailAnim, setTrendingDetailAnim] = useState("closed");
 
@@ -1417,11 +1558,15 @@ export default function SondalApp() {
         <div style={{ flex:1, minHeight:0, display:"flex", flexDirection:"column", overflow:"hidden" }}>
           {activeNav==="discover" && <DiscoverScreen onGoToCreate={openCreator} onShowTrending={()=>setShowTrending(true)}/>}
           {activeNav==="discuss"  && <DiscussScreen onGoHome={()=>{setActiveNav("discover"); setShowTrending(false);}}/>}
-          {activeNav==="account"  && <LoginScreen onGoHome={()=>{setActiveNav("discover"); setShowTrending(false);}}/>}
+          {activeNav==="account" && (
+            isLoggedIn
+              ? <ProfileScreen onGoHome={()=>{setActiveNav("discover"); setShowTrending(false);}} onLogout={()=>setIsLoggedIn(false)}/>
+              : <LoginScreen onGoHome={()=>{setActiveNav("discover"); setShowTrending(false);}} onLoggedIn={()=>setIsLoggedIn(true)}/>
+          )}
         </div>
 
         {/* ── Navbar — always visible, outside all overlays ── */}
-        {!showTrending && !creatorOpen && activeNav!=="account" && (
+        {!showTrending && !creatorOpen && (activeNav!=="account" || isLoggedIn) && (
           <BottomNav active={activeNav} setActive={handleNavChange}/>
         )}
 
