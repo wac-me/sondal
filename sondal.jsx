@@ -956,7 +956,7 @@ function CopyField({ label, value }) {
   );
 }
 
-function SuccessScreen({ pollData, onReset, onGoToDiscover, onPreviewShared }) {
+function SuccessScreen({ pollData, onReset, onGoToDiscover, onPreviewShared, onPreviewEmbed }) {
   const slug = "x/"+Math.random().toString(36).slice(2,7);
   const link = `sondal.top/${slug}`;
   const iframe = `<iframe src="https://sondal.top/${slug}/embed" width="100%" height="320" frameborder="0"></iframe>`;
@@ -986,8 +986,13 @@ function SuccessScreen({ pollData, onReset, onGoToDiscover, onPreviewShared }) {
         <CopyField label="Twój link" value={link}/>
         <CopyField label="Kod do osadzenia (iFrame)" value={iframe}/>
         {onPreviewShared && (
-          <button onClick={onPreviewShared} style={{ width:"100%", background:"none", border:`1px dashed ${theme.border}`, borderRadius:9, padding:"10px", color:theme.textDim, fontFamily:"Inter, sans-serif", fontSize:11, cursor:"pointer", marginBottom:16 }}>
+          <button onClick={onPreviewShared} style={{ width:"100%", background:"none", border:`1px dashed ${theme.border}`, borderRadius:9, padding:"10px", color:theme.textDim, fontFamily:"Inter, sans-serif", fontSize:11, cursor:"pointer", marginBottom:8 }}>
             👁 Demo: zobacz jak wygląda ten link dla odbiorcy
+          </button>
+        )}
+        {onPreviewEmbed && (
+          <button onClick={onPreviewEmbed} style={{ width:"100%", background:"none", border:`1px dashed ${theme.border}`, borderRadius:9, padding:"10px", color:theme.textDim, fontFamily:"Inter, sans-serif", fontSize:11, cursor:"pointer", marginBottom:16 }}>
+            🖼 Demo: zobacz jak wygląda osadzony iFrame
           </button>
         )}
         <div style={{ background:`linear-gradient(135deg, ${theme.accentDim}, ${theme.indigoDim})`, border:`1px solid ${theme.borderAccent}`, borderRadius:14, padding:"16px", marginBottom:20 }}>
@@ -1051,6 +1056,108 @@ function TrendingNowScreen({ onBack, onPollOpen, onNavChange, activeNav }) {
           </div>
         ))}
         <div style={{ height:20 }}/>
+      </div>
+    </div>
+  );
+}
+
+// ─── Embed Widget — sondal.top/x/abc/embed ─────────────────
+// Renderowane wewnątrz <iframe> na zewnętrznej stronie.
+// Brak nawigacji portalu — tylko sonda + minimalny branding.
+// Wymiary projektowane pod typowy embed: ~100% szerokości, ~280-340px wysokości.
+function EmbedWidget() {
+  const [voted, setVoted] = useState(null);
+
+  const poll = {
+    question: "Czy rondo przy Dworcu Centralnym powinno mieć naziemne przejścia dla pieszych?",
+    options: ["Tak — ułatwi życie pieszym", "Nie — sparaliżuje ruch aut"],
+    split: [64, 36],
+    totalVotes: 2341,
+  };
+
+  return (
+    <div style={{
+      background:theme.surface, border:`1px solid ${theme.border}`, borderRadius:14,
+      padding:"16px 16px 12px", fontFamily:"Inter, sans-serif",
+      maxWidth:420, width:"100%", boxSizing:"border-box",
+    }}>
+      <h2 style={{ color:theme.text, fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:15, fontWeight:700, lineHeight:1.4, margin:"0 0 14px" }}>{poll.question}</h2>
+
+      {voted === null ? (
+        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+          {poll.options.map((opt,i) => (
+            <button key={i} onClick={() => setVoted(i)}
+              style={{ background:theme.surfaceHigh, border:`1px solid ${theme.border}`, borderRadius:9, padding:"11px 13px", color:theme.text, fontFamily:"Inter, sans-serif", fontSize:13, textAlign:"left", cursor:"pointer", transition:"border-color 0.15s" }}
+              onMouseEnter={e=>e.currentTarget.style.borderColor=theme.accent}
+              onMouseLeave={e=>e.currentTarget.style.borderColor=theme.border}
+            >{opt}</button>
+          ))}
+        </div>
+      ) : (
+        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+          {poll.options.map((opt,i) => (
+            <div key={i}>
+              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
+                <span style={{ color: i===voted ? theme.accentBright : theme.textMuted, fontSize:12, fontFamily:"Inter, sans-serif", fontWeight: i===voted ? 600 : 400 }}>{opt} {i===voted && "✓"}</span>
+                <span style={{ color:theme.textMuted, fontSize:12, fontFamily:"Inter, sans-serif", fontWeight:700 }}>{poll.split[i]}%</span>
+              </div>
+              <div style={{ height:7, background:theme.border, borderRadius:4, overflow:"hidden" }}>
+                <div style={{ width:`${poll.split[i]}%`, height:"100%", background: i===voted ? theme.accent : theme.textDim, borderRadius:4, transition:"width 0.6s ease" }}/>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Footer — vote count + mandatory branding (link out to full poll) */}
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:14, paddingTop:10, borderTop:`1px solid ${theme.border}` }}>
+        <span style={{ color:theme.textDim, fontSize:11, fontFamily:"Inter, sans-serif" }}>
+          {voted !== null ? `${poll.totalVotes.toLocaleString()} głosów` : "Kliknij, by zagłosować"}
+        </span>
+        <a href="#" style={{ display:"flex", alignItems:"center", gap:5, textDecoration:"none" }}>
+          <LogoMark size={16}/>
+          <span style={{ color:theme.textMuted, fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:11, fontWeight:700 }}>
+            sondal<span style={{ color:theme.accent }}>.top</span>
+          </span>
+        </a>
+      </div>
+    </div>
+  );
+}
+
+// Wrapper pokazujący jak embed wygląda osadzony na obcej stronie (demo only)
+function EmbedPreview({ onClose }) {
+  return (
+    <div style={{ position:"absolute", inset:0, zIndex:900, background:"#f1f3f5", overflowY:"auto" }}>
+      {/* Fake external site header — pokazuje kontekst osadzenia */}
+      <div style={{ background:"#fff", borderBottom:"1px solid #e2e4e7", padding:"14px 16px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <span style={{ fontFamily:"Georgia, serif", fontSize:18, fontWeight:700, color:"#1a1a1a" }}>Blog Mieszkańca</span>
+        <button onClick={onClose} style={{ background:"#1a1a1a", color:"#fff", border:"none", borderRadius:8, padding:"7px 14px", fontFamily:"Inter, sans-serif", fontSize:12, cursor:"pointer" }}>Zamknij podgląd</button>
+      </div>
+
+      {/* Fake article content around the embed */}
+      <div style={{ padding:"24px 18px", maxWidth:480, margin:"0 auto" }}>
+        <p style={{ color:"#666", fontFamily:"Georgia, serif", fontSize:11, textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:8 }}>Urbanistyka • 3 min czytania</p>
+        <h1 style={{ color:"#1a1a1a", fontFamily:"Georgia, serif", fontSize:24, fontWeight:700, lineHeight:1.3, marginBottom:14 }}>Czy nasze rondo naprawdę potrzebuje przejść naziemnych?</h1>
+        <p style={{ color:"#333", fontFamily:"Georgia, serif", fontSize:15, lineHeight:1.7, marginBottom:16 }}>
+          Temat wraca co kilka miesięcy przy okazji kolejnego wypadku. Urzędnicy mówią o "analizie", mieszkańcy o zdrowym rozsądku.
+          Postanowiłem sprawdzić, co na ten temat sądzi społeczność — wstawiłem sondę z portalu sondal.top bezpośrednio w tym artykule:
+        </p>
+
+        {/* ── Actual embed widget rendered inline ── */}
+        <div style={{ margin:"20px 0" }}>
+          <EmbedWidget/>
+        </div>
+
+        <p style={{ color:"#333", fontFamily:"Georgia, serif", fontSize:15, lineHeight:1.7, marginTop:16 }}>
+          Wyniki będą aktualizować się na żywo — możesz wrócić do tego artykułu za tydzień i zobaczyć jak zmieniło się zdanie czytelników.
+        </p>
+
+        <div style={{ marginTop:24, padding:"14px 16px", background:"#fff", border:"1px solid #e2e4e7", borderRadius:10 }}>
+          <p style={{ color:"#888", fontFamily:"Inter, sans-serif", fontSize:11, lineHeight:1.6, margin:0 }}>
+            💡 To jest podgląd jak wygląda kod &lt;iframe&gt; osadzony na zewnętrznej stronie — np. blogu, w artykule prasowym, albo na stronie szkoły. Widget dziedziczy własny styl niezależnie od strony hosta.
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -1500,6 +1607,7 @@ export default function SondalApp() {
   const [showTrending, setShowTrending] = useState(false);
   const [showSharedPoll, setShowSharedPoll] = useState(false); // demo: sondal.top/x/abc
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showEmbedPreview, setShowEmbedPreview] = useState(false);
   const [trendingDetailId, setTrendingDetailId] = useState(null);
   const [trendingDetailAnim, setTrendingDetailAnim] = useState("closed");
 
@@ -1601,7 +1709,7 @@ export default function SondalApp() {
           }}>
             <div style={{ flex:1, minHeight:0, display:"flex", flexDirection:"column" }}>
               {creatorStep==="form"    && <CreatorScreen onSuccess={handleSuccess} onClose={closeCreator}/>}
-              {creatorStep==="success" && <SuccessScreen pollData={pollData} onReset={handleReset} onGoToDiscover={handleGoToDiscover} onPreviewShared={()=>setShowSharedPoll(true)}/>}
+              {creatorStep==="success" && <SuccessScreen pollData={pollData} onReset={handleReset} onGoToDiscover={handleGoToDiscover} onPreviewShared={()=>setShowSharedPoll(true)} onPreviewEmbed={()=>setShowEmbedPreview(true)}/>}
             </div>
           </div>
         )}
@@ -1611,6 +1719,11 @@ export default function SondalApp() {
           <div style={{ position:"absolute", inset:0, zIndex:900 }}>
             <SharedPollScreen onGoToPortal={() => { setShowSharedPoll(false); setCreatorOpen(false); setCreatorAnim("closed"); setActiveNav("discover"); }}/>
           </div>
+        )}
+
+        {/* ── Embed Preview — sondal.top/x/abc/embed (demo overlay) ── */}
+        {showEmbedPreview && (
+          <EmbedPreview onClose={() => setShowEmbedPreview(false)}/>
         )}
       </div>
     </>
