@@ -501,7 +501,7 @@ function SondaDetail({ poll, onClose }) {
         </div>
       </div>
 
-      <div style={{ flex:1, overflowY:"auto" }}>
+      <div style={{ flex:1, overflowY:"auto", WebkitOverflowScrolling:"touch", minHeight:0 }}>
 
         {/* Poll card */}
         <div style={{ padding:"14px 16px 18px", borderBottom:`1px solid ${theme.border}` }}>
@@ -794,7 +794,7 @@ function DiscoverScreen({ onGoToCreate, onShowTrending }) {
   return (
     <div style={{ flex:1, display:"flex", flexDirection:"column", position:"relative", overflow:"hidden" }}>
       <StickyHeader nowActive={true} onCreateClick={onGoToCreate} onShowTrending={onShowTrending} onGoHome={()=>{ setShowTrending(false); setDetailId(null); }}/>
-      <div data-scroll-feed style={{ flex:1, overflowY:"auto", position:"relative", paddingTop:64 }}>
+      <div data-scroll-feed style={{ flex:1, overflowY:"auto", position:"relative", paddingTop:64, WebkitOverflowScrolling:"touch", minHeight:0 }}>
         <TickerBar/>
         <HeroSlider onCreateClick={onGoToCreate}/>
         <StatsBar/>
@@ -961,9 +961,9 @@ function SuccessScreen({ pollData, onReset, onGoToDiscover, onPreviewShared, onP
   const link = `sondal.top/${slug}`;
   const iframe = `<iframe src="https://sondal.top/${slug}/embed" width="100%" height="320" frameborder="0"></iframe>`;
   return (
-    <>
+    <div style={{ flex:1, display:"flex", flexDirection:"column", minHeight:0, overflow:"hidden" }}>
       <StickyHeader nowActive={false}/>
-      <div style={{ flex:1, overflowY:"auto", padding:"24px 16px 0" }}>
+      <div style={{ flex:1, overflowY:"auto", padding:"24px 16px 0", WebkitOverflowScrolling:"touch", minHeight:0 }}>
         <div style={{ textAlign:"center", marginBottom:24 }}>
           <div style={{ width:60, height:60, borderRadius:"50%", background:theme.accentDim, border:`2px solid ${theme.borderAccent}`, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 12px", fontSize:26 }}>⚡</div>
           <h2 style={{ color:theme.text, fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:22, fontWeight:800, margin:"0 0 6px" }}>Sonda gotowa!</h2>
@@ -1005,7 +1005,7 @@ function SuccessScreen({ pollData, onReset, onGoToDiscover, onPreviewShared, onP
           <button onClick={onGoToDiscover} style={{ flex:1, background:theme.surface, border:`1px solid ${theme.border}`, borderRadius:10, padding:"13px", color:theme.textMuted, fontFamily:"Inter, sans-serif", fontSize:14, cursor:"pointer" }}>◎ Portal</button>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -1029,7 +1029,7 @@ function TrendingNowScreen({ onBack, onPollOpen, onNavChange, activeNav }) {
         </button>
       </div>
 
-      <div style={{ flex:1, overflowY:"auto", padding:"16px 16px 0" }}>
+      <div style={{ flex:1, overflowY:"auto", padding:"16px 16px 0", WebkitOverflowScrolling:"touch", minHeight:0 }}>
         {/* Header */}
         <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:16 }}>
           <div style={{ width:3, height:16, background:theme.red, borderRadius:2 }}/>
@@ -1202,7 +1202,7 @@ function SharedPollScreen({ onGoToPortal }) {
         </div>
       </div>
 
-      <div style={{ flex:1, overflowY:"auto", padding:"24px 16px" }}>
+      <div style={{ flex:1, overflowY:"auto", padding:"24px 16px", WebkitOverflowScrolling:"touch", minHeight:0 }}>
 
         {/* Poll card — centered, standalone */}
         <div style={{ background:theme.surface, border:`1px solid ${theme.border}`, borderRadius:16, padding:"20px 18px", marginBottom:20 }}>
