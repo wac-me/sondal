@@ -892,7 +892,7 @@ function CreatorScreen({ onSuccess, onClose }) {
           </button>
         )}
       </div>
-      <div style={{ flex:1, overflowY:"auto", padding:"16px 16px 0" }}>
+      <div style={{ flex:1, overflowY:"auto", padding:"16px 16px 0", WebkitOverflowScrolling:"touch", minHeight:0 }}>
         <div style={{ marginBottom:16 }}>
           <label style={{ color:theme.textMuted, fontFamily:"Inter, sans-serif", fontSize:10, fontWeight:600, letterSpacing:"0.06em", textTransform:"uppercase", display:"block", marginBottom:8 }}>Pytanie</label>
           <textarea value={question} onChange={e=>setQuestion(e.target.value)} placeholder="O co chcesz zapytać?" rows={3}
@@ -1002,7 +1002,7 @@ function SuccessScreen({ pollData, onReset, onGoToDiscover }) {
 // ─── Trending Now Full Screen ─────────────────────────────
 function TrendingNowScreen({ onBack, onPollOpen, onNavChange, activeNav }) {
   return (
-    <div style={{ flex:1, display:"flex", flexDirection:"column", background:theme.bg }}>
+    <div style={{ flex:1, display:"flex", flexDirection:"column", background:theme.bg, minHeight:0, overflow:"hidden" }}>
       <div style={{ height:64, padding:"0 16px", borderBottom:`1px solid ${theme.border}`, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0, background:`${theme.bg}F4`, backdropFilter:"blur(14px)" }}>
         <div onClick={onBack} style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer" }}>
           <LogoMark size={28}/>
@@ -1286,58 +1286,53 @@ export default function SondalApp() {
       <div style={{ background:theme.bg, height:"100dvh", maxWidth:430, margin:"0 auto", display:"flex", flexDirection:"column", fontFamily:"Inter, sans-serif", overflow:"hidden", position:"relative" }}>
 
         {/* ── Main screens ── */}
-        <div style={{ flex:1, minHeight:0, display:"flex", flexDirection:"column",
-          overflow:"hidden",
-        }}>
+        <div style={{ flex:1, minHeight:0, display:"flex", flexDirection:"column", overflow:"hidden" }}>
           {activeNav==="discover" && <DiscoverScreen onGoToCreate={openCreator} onShowTrending={()=>setShowTrending(true)}/>}
-          {activeNav==="discuss" && <DiscussScreen onGoHome={()=>{setActiveNav("discover"); setShowTrending(false);}}/>}
-          {activeNav==="account" && <LoginScreen onGoHome={()=>{setActiveNav("discover"); setShowTrending(false);}}/>}
-
-          {/* Trending NOW full screen — triggered by NOW! badge or section title */}
-          {showTrending && (
-            <div style={{ position:"absolute", inset:0, zIndex:200, background:theme.bg }}>
-              <TrendingNowScreen onBack={()=>setShowTrending(false)} onPollOpen={openTrendingDetail} onNavChange={handleNavChange} activeNav={activeNav}/>
-            </div>
-          )}
-
-          {/* Trending detail over trending full screen */}
-          {trendingDetailId !== null && trendingPollDetails[trendingDetailId] && (
-            <div style={{
-              position:"absolute", inset:0, zIndex:250,
-              transform: trendingDetailAnim==="open" ? "translateX(0)" : "translateX(100%)",
-              transition: (trendingDetailAnim==="open" || trendingDetailAnim==="closing") ? "transform 0.38s cubic-bezier(.22,.68,0,1.1)" : "none",
-            }}>
-              <SondaDetail poll={trendingPollDetails[trendingDetailId]} onClose={closeTrendingDetail}/>
-            </div>
-          )}
+          {activeNav==="discuss"  && <DiscussScreen onGoHome={()=>{setActiveNav("discover"); setShowTrending(false);}}/>}
+          {activeNav==="account"  && <LoginScreen onGoHome={()=>{setActiveNav("discover"); setShowTrending(false);}}/>}
         </div>
+
+        {/* ── Navbar — always visible, outside all overlays ── */}
+        {!showTrending && !creatorOpen && (
+          <BottomNav active={activeNav} setActive={handleNavChange}/>
+        )}
+
+        {/* ── Trending NOW — full screen overlay z własnym dockiem ── */}
+        {showTrending && (
+          <div style={{ position:"absolute", inset:0, zIndex:200, background:theme.bg, display:"flex", flexDirection:"column" }}>
+            <div style={{ flex:1, minHeight:0, display:"flex", flexDirection:"column", overflow:"hidden" }}>
+              <TrendingNowScreen onBack={()=>setShowTrending(false)} onPollOpen={openTrendingDetail}/>
+            </div>
+            <BottomNav active={activeNav} setActive={(id)=>{ setShowTrending(false); handleNavChange(id); }}/>
+
+            {/* Sonda Detail nad Trending */}
+            {trendingDetailId !== null && trendingPollDetails[trendingDetailId] && (
+              <div style={{
+                position:"absolute", inset:0, zIndex:50,
+                transform: trendingDetailAnim==="open" ? "translateX(0)" : "translateX(100%)",
+                transition: (trendingDetailAnim==="open" || trendingDetailAnim==="closing") ? "transform 0.38s cubic-bezier(.22,.68,0,1.1)" : "none",
+              }}>
+                <SondaDetail poll={trendingPollDetails[trendingDetailId]} onClose={closeTrendingDetail}/>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ── Bottom Sheet — Creator ── */}
         {creatorOpen && (
-          <>
-            {/* Sheet — full screen */}
-            <div style={{
-              position:"absolute", inset:0, zIndex:500,
-              background:theme.bg,
-              display:"flex", flexDirection:"column",
-              transform:`translateY(${sheetY})`,
-              transition:"transform 0.4s cubic-bezier(.4,0,.2,1)",
-            }}>
-              <div style={{ flexShrink:0, height:0 }}/>
-
-              {/* Content */}
-              <div style={{ flex:1, minHeight:0, display:"flex", flexDirection:"column" }}>
-                {creatorStep==="form" && <CreatorScreen onSuccess={handleSuccess} onClose={closeCreator}/>}
-                {creatorStep==="success" && <SuccessScreen pollData={pollData} onReset={handleReset} onGoToDiscover={handleGoToDiscover}/>}
-              </div>
+          <div style={{
+            position:"absolute", inset:0, zIndex:500,
+            background:theme.bg, display:"flex", flexDirection:"column",
+            transform:`translateY(${sheetY})`,
+            transition:"transform 0.4s cubic-bezier(.4,0,.2,1)",
+          }}>
+            <div style={{ flex:1, minHeight:0, display:"flex", flexDirection:"column" }}>
+              {creatorStep==="form"    && <CreatorScreen onSuccess={handleSuccess} onClose={closeCreator}/>}
+              {creatorStep==="success" && <SuccessScreen pollData={pollData} onReset={handleReset} onGoToDiscover={handleGoToDiscover}/>}
             </div>
-          </>
+          </div>
         )}
-
-        {/* ── Navbar ── */}
-        <BottomNav active={creatorOpen ? "create" : activeNav} setActive={handleNavChange}/>
       </div>
     </>
   );
 }
-
