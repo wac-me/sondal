@@ -956,7 +956,7 @@ function CopyField({ label, value }) {
   );
 }
 
-function SuccessScreen({ pollData, onReset, onGoToDiscover }) {
+function SuccessScreen({ pollData, onReset, onGoToDiscover, onPreviewShared }) {
   const slug = "x/"+Math.random().toString(36).slice(2,7);
   const link = `sondal.top/${slug}`;
   const iframe = `<iframe src="https://sondal.top/${slug}/embed" width="100%" height="320" frameborder="0"></iframe>`;
@@ -985,6 +985,11 @@ function SuccessScreen({ pollData, onReset, onGoToDiscover }) {
         </div>
         <CopyField label="Twój link" value={link}/>
         <CopyField label="Kod do osadzenia (iFrame)" value={iframe}/>
+        {onPreviewShared && (
+          <button onClick={onPreviewShared} style={{ width:"100%", background:"none", border:`1px dashed ${theme.border}`, borderRadius:9, padding:"10px", color:theme.textDim, fontFamily:"Inter, sans-serif", fontSize:11, cursor:"pointer", marginBottom:16 }}>
+            👁 Demo: zobacz jak wygląda ten link dla odbiorcy
+          </button>
+        )}
         <div style={{ background:`linear-gradient(135deg, ${theme.accentDim}, ${theme.indigoDim})`, border:`1px solid ${theme.borderAccent}`, borderRadius:14, padding:"16px", marginBottom:20 }}>
           <p style={{ color:theme.text, fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:14, fontWeight:700, margin:"0 0 6px" }}>Chcesz więcej możliwości?</p>
           <p style={{ color:theme.textMuted, fontFamily:"Inter, sans-serif", fontSize:12, margin:"0 0 12px", lineHeight:1.5 }}>Zaloguj się, aby śledzić wyniki na żywo, edytować sondę i eksportować dane do CSV.</p>
@@ -1046,6 +1051,119 @@ function TrendingNowScreen({ onBack, onPollOpen, onNavChange, activeNav }) {
           </div>
         ))}
         <div style={{ height:20 }}/>
+      </div>
+    </div>
+  );
+}
+
+// ─── Shared Poll Screen — sondal.top/x/abc ─────────────────
+// Ekran widziany przez kogoś klikającego udostępniony link.
+// Nie zakłada że osoba jest zalogowana ani że zna portal.
+function SharedPollScreen({ onGoToPortal }) {
+  const [voted, setVoted] = useState(null);
+  const [copied, setCopied] = useState(false);
+
+  // Mock danych — w realnej implementacji pobierane z bazy po slug z URL
+  const poll = {
+    question: "Czy rondo przy Dworcu Centralnym powinno mieć naziemne przejścia dla pieszych?",
+    tag: "#warszawa",
+    options: ["Tak — ułatwi życie pieszym", "Nie — sparaliżuje ruch aut"],
+    split: [64, 36],
+    totalVotes: 2341,
+    author: "@ania_wawa",
+    avatar: "A",
+    time: "8 min temu",
+  };
+
+  const handleCopy = () => {
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div style={{ background:theme.bg, minHeight:"100dvh", maxWidth:430, margin:"0 auto", display:"flex", flexDirection:"column", fontFamily:"Inter, sans-serif" }}>
+
+      {/* Minimal header — no nav, no search, just brand */}
+      <div onClick={onGoToPortal} style={{ height:64, padding:"0 16px", borderBottom:`1px solid ${theme.border}`, display:"flex", alignItems:"center", gap:8, cursor:"pointer", flexShrink:0 }}>
+        <LogoMark size={28}/>
+        <div>
+          <div style={{ display:"flex", alignItems:"baseline", gap:2 }}>
+            <span style={{ fontFamily:"'Plus Jakarta Sans', sans-serif", fontWeight:800, fontSize:18, color:theme.text, letterSpacing:"-0.5px" }}>sondal</span>
+            <span style={{ fontFamily:"Inter, sans-serif", fontWeight:500, fontSize:12, color:theme.accent }}>.top</span>
+          </div>
+          <p style={{ color:theme.textDim, fontFamily:"Inter, sans-serif", fontSize:8, margin:0, letterSpacing:"0.06em", textTransform:"uppercase" }}>Sonda to argument.</p>
+        </div>
+      </div>
+
+      <div style={{ flex:1, overflowY:"auto", padding:"24px 16px" }}>
+
+        {/* Poll card — centered, standalone */}
+        <div style={{ background:theme.surface, border:`1px solid ${theme.border}`, borderRadius:16, padding:"20px 18px", marginBottom:20 }}>
+
+          <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:14 }}>
+            <div style={{ width:30, height:30, borderRadius:"50%", background:theme.indigo, border:`1px solid ${theme.borderAccent}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, color:theme.accent, fontWeight:700, flexShrink:0 }}>{poll.avatar}</div>
+            <div style={{ flex:1 }}>
+              <div style={{ display:"flex", gap:6, alignItems:"center" }}>
+                <span style={{ color:theme.text, fontSize:13, fontFamily:"Inter, sans-serif", fontWeight:600 }}>{poll.author}</span>
+                <span style={{ color:theme.textDim, fontSize:11, fontFamily:"Inter, sans-serif" }}>{poll.time}</span>
+              </div>
+              <Tag>{poll.tag}</Tag>
+            </div>
+          </div>
+
+          <h1 style={{ color:theme.text, fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:19, fontWeight:700, lineHeight:1.4, margin:"0 0 18px" }}>{poll.question}</h1>
+
+          {voted === null ? (
+            <div style={{ display:"flex", flexDirection:"column", gap:9 }}>
+              {poll.options.map((opt,i) => (
+                <button key={i} onClick={() => setVoted(i)}
+                  style={{ background:theme.surfaceHigh, border:`1px solid ${theme.border}`, borderRadius:11, padding:"14px 16px", color:theme.text, fontFamily:"Inter, sans-serif", fontSize:14, textAlign:"left", cursor:"pointer", transition:"border-color 0.15s" }}
+                  onMouseEnter={e=>e.currentTarget.style.borderColor=theme.accent}
+                  onMouseLeave={e=>e.currentTarget.style.borderColor=theme.border}
+                >{opt}</button>
+              ))}
+            </div>
+          ) : (
+            <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+              {poll.options.map((opt,i) => (
+                <div key={i}>
+                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5 }}>
+                    <span style={{ color: i===voted ? theme.accentBright : theme.textMuted, fontSize:13, fontFamily:"Inter, sans-serif", fontWeight: i===voted ? 600 : 400 }}>{opt} {i===voted && "✓"}</span>
+                    <span style={{ color:theme.textMuted, fontSize:13, fontFamily:"Inter, sans-serif", fontWeight:700 }}>{poll.split[i]}%</span>
+                  </div>
+                  <div style={{ height:8, background:theme.border, borderRadius:4, overflow:"hidden" }}>
+                    <div style={{ width:`${poll.split[i]}%`, height:"100%", background: i===voted ? theme.accent : theme.textDim, borderRadius:4, transition:"width 0.6s ease" }}/>
+                  </div>
+                </div>
+              ))}
+              <p style={{ color:theme.textDim, fontSize:12, fontFamily:"Inter, sans-serif", marginTop:6 }}>{poll.totalVotes.toLocaleString()} głosów łącznie</p>
+            </div>
+          )}
+
+          {/* Share row */}
+          <div style={{ display:"flex", gap:8, marginTop:18, paddingTop:16, borderTop:`1px solid ${theme.border}` }}>
+            <button onClick={handleCopy} style={{ flex:1, background:theme.bg, border:`1px solid ${theme.border}`, borderRadius:9, padding:"10px", color: copied ? theme.green : theme.textMuted, fontFamily:"Inter, sans-serif", fontSize:12, fontWeight:600, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+              {copied ? "✓ Skopiowano" : <><Share2 size={14} strokeWidth={1.8}/> Udostępnij</>}
+            </button>
+            <button style={{ flex:1, background:theme.bg, border:`1px solid ${theme.border}`, borderRadius:9, padding:"10px", color:theme.textMuted, fontFamily:"Inter, sans-serif", fontSize:12, fontWeight:600, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+              <MessageCircle size={14} strokeWidth={1.8}/> Komentarze
+            </button>
+          </div>
+        </div>
+
+        {/* CTA — odkryj resztę portalu */}
+        <div style={{ background:`linear-gradient(135deg, ${theme.accentDim}, ${theme.indigoDim})`, border:`1px solid ${theme.borderAccent}`, borderRadius:14, padding:"18px 16px", textAlign:"center" }}>
+          <BarChart2 size={26} color={theme.accent} strokeWidth={1.5} style={{ marginBottom:10 }}/>
+          <p style={{ color:theme.text, fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:15, fontWeight:700, margin:"0 0 6px" }}>Zobacz więcej sond na sondal.top</p>
+          <p style={{ color:theme.textMuted, fontFamily:"Inter, sans-serif", fontSize:12, margin:"0 0 14px", lineHeight:1.5 }}>Fakty zestawione z opinią ludzi. Dane GUS, Banku Światowego i tysięcy głosów społeczności.</p>
+          <button onClick={onGoToPortal} style={{ background:theme.accent, color:"#fff", border:"none", borderRadius:10, padding:"11px 24px", fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:13, fontWeight:700, cursor:"pointer" }}>
+            Odkryj portal →
+          </button>
+        </div>
+
+        <p style={{ color:theme.textDim, fontFamily:"Inter, sans-serif", fontSize:11, textAlign:"center", marginTop:20 }}>
+          sondal.top — Sonda to argument.
+        </p>
       </div>
     </div>
   );
@@ -1121,9 +1239,9 @@ function DiscussScreen({ onGoHome }) {
 function LoginScreen({ onGoHome }) {
   const [mode, setMode] = useState("login"); // "login"|"register"
   return (
-    <div style={{ flex:1, display:"flex", flexDirection:"column" }}>
+    <div style={{ flex:1, display:"flex", flexDirection:"column", minHeight:0, overflow:"hidden" }}>
       <StickyHeader nowActive={false} onGoHome={onGoHome}/>
-      <div style={{ flex:1, overflowY:"auto", paddingTop:64, padding:"80px 24px 24px" }}>
+      <div style={{ flex:1, overflowY:"auto", paddingTop:64, padding:"80px 24px 24px", WebkitOverflowScrolling:"touch", minHeight:0 }}>
 
         {/* Logo mark centered */}
         <div style={{ textAlign:"center", marginBottom:32 }}>
@@ -1184,12 +1302,21 @@ function LoginScreen({ onGoHome }) {
 
         {/* Social login */}
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          {["Google","Apple"].map(provider => (
-            <button key={provider} style={{ width:"100%", background:theme.surface, color:theme.text, border:`1px solid ${theme.border}`, borderRadius:12, padding:"14px", fontFamily:"Inter, sans-serif", fontSize:14, fontWeight:600, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:10 }}>
-              <span style={{ fontSize:18 }}>{provider==="Google"?"G":"🍎"}</span>
-              Kontynuuj z {provider}
-            </button>
-          ))}
+          <button style={{ width:"100%", background:theme.surface, color:theme.text, border:`1px solid ${theme.border}`, borderRadius:12, padding:"14px", fontFamily:"Inter, sans-serif", fontSize:14, fontWeight:600, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:10 }}>
+            <svg width="18" height="18" viewBox="0 0 18 18">
+              <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.13-.84 2.08-1.8 2.72v2.26h2.91c1.7-1.57 2.69-3.88 2.69-6.62z"/>
+              <path fill="#34A853" d="M9 18c2.43 0 4.47-.81 5.96-2.18l-2.91-2.26c-.81.54-1.84.86-3.05.86-2.35 0-4.34-1.59-5.05-3.72H.96v2.33C2.44 15.98 5.48 18 9 18z"/>
+              <path fill="#FBBC05" d="M3.95 10.7c-.18-.54-.28-1.11-.28-1.7s.1-1.16.28-1.7V4.97H.96A8.997 8.997 0 0 0 0 9c0 1.45.35 2.83.96 4.03l2.99-2.33z"/>
+              <path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0 5.48 0 2.44 2.02.96 4.97l2.99 2.33C4.66 5.17 6.65 3.58 9 3.58z"/>
+            </svg>
+            Kontynuuj z Google
+          </button>
+          <button style={{ width:"100%", background:theme.surface, color:theme.text, border:`1px solid ${theme.border}`, borderRadius:12, padding:"14px", fontFamily:"Inter, sans-serif", fontSize:14, fontWeight:600, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:10 }}>
+            <svg width="16" height="18" viewBox="0 0 16 18" fill={theme.text}>
+              <path d="M13.2 9.5c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.8-3.5.8-.7 0-1.8-.8-3-.8-1.5 0-3 .9-3.8 2.3-1.6 2.8-.4 7 1.2 9.3.8 1.1 1.7 2.4 2.9 2.4 1.2 0 1.6-.8 3-.8s1.8.8 3 .7c1.2 0 2-1.1 2.8-2.3.9-1.3 1.2-2.5 1.2-2.6-.1 0-2.4-.9-2.4-3.7zM10.9 2.6c.7-.8 1.1-1.9 1-3-1 .1-2.1.6-2.8 1.4-.6.7-1.1 1.8-1 2.9 1.1.1 2.1-.5 2.8-1.3z"/>
+            </svg>
+            Kontynuuj z Apple
+          </button>
         </div>
 
         <p style={{ color:theme.textDim, fontFamily:"Inter, sans-serif", fontSize:11, textAlign:"center", marginTop:24, lineHeight:1.6 }}>
@@ -1231,6 +1358,7 @@ export default function SondalApp() {
   const [creatorOpen,  setCreatorOpen]  = useState(false);
   const [creatorAnim,  setCreatorAnim]  = useState("closed");
   const [showTrending, setShowTrending] = useState(false);
+  const [showSharedPoll, setShowSharedPoll] = useState(false); // demo: sondal.top/x/abc
   const [trendingDetailId, setTrendingDetailId] = useState(null);
   const [trendingDetailAnim, setTrendingDetailAnim] = useState("closed");
 
@@ -1328,8 +1456,15 @@ export default function SondalApp() {
           }}>
             <div style={{ flex:1, minHeight:0, display:"flex", flexDirection:"column" }}>
               {creatorStep==="form"    && <CreatorScreen onSuccess={handleSuccess} onClose={closeCreator}/>}
-              {creatorStep==="success" && <SuccessScreen pollData={pollData} onReset={handleReset} onGoToDiscover={handleGoToDiscover}/>}
+              {creatorStep==="success" && <SuccessScreen pollData={pollData} onReset={handleReset} onGoToDiscover={handleGoToDiscover} onPreviewShared={()=>setShowSharedPoll(true)}/>}
             </div>
+          </div>
+        )}
+
+        {/* ── Shared Poll — sondal.top/x/abc (demo overlay, highest z-index) ── */}
+        {showSharedPoll && (
+          <div style={{ position:"absolute", inset:0, zIndex:900 }}>
+            <SharedPollScreen onGoToPortal={() => { setShowSharedPoll(false); setCreatorOpen(false); setCreatorAnim("closed"); setActiveNav("discover"); }}/>
           </div>
         )}
       </div>
